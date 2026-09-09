@@ -1,0 +1,6 @@
+@Web.TickTest_HostAddress = http://localhost:5001
+
+GET {{Web.TickTest_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
