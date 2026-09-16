@@ -1,0 +1,31 @@
+﻿public enum TConnectorOrderStatus : int
+{
+    cosNew = 0,
+    cosPartiallyFilled = 1,
+    cosFilled = 2,
+    cosDoneForDay = 3,
+    cosCanceled = 4,
+    cosReplaced = 5,
+    cosPendingCancel = 6,
+    cosStopped = 7,
+    cosRejected = 8,
+    cosSuspended = 9,
+    cosPendingNew = 10,
+    cosCalculated = 11,
+    cosExpired = 12,
+    cosAcceptedForBidding = 13,
+    cosPendingReplace = 14,
+    cosPartiallyFilledCanceled = 15,
+    cosReceived = 16,
+    cosPartiallyFilledExpired = 17,
+    cosPartiallyFilledRejected =     18,
+
+    cosUnknown = 200,
+    cosHadesCreated = 201,
+    cosBrokerSent = 202,
+    cosClientCreated = 203,
+    cosOrderNotCreated = 204,
+    cosCanceledByAdmin = 205,
+    cosDelayFixGateway = 206,
+    cosScheduledOrder = 207
+}
