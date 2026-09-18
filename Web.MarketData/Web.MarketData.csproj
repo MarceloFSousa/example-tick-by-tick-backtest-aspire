@@ -12,6 +12,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\TickTest.ServiceDefaults\TickTest.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\Data.TickTest\Domain.MarketData.csproj" />
+    <ProjectReference Include="..\Application.MarketData\Application.MarketData.csproj" />
+    <ProjectReference Include="..\Infrastructure.MarketData\Infrastructure.MarketData.csproj" />
   </ItemGroup>
 
 </Project>
