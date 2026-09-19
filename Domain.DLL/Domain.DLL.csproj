@@ -13,10 +13,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Domain.Spode\Domain.Spode.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Folder Include="Utils\" />
   </ItemGroup>
 
