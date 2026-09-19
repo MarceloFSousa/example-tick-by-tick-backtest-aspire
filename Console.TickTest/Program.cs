@@ -1,4 +1,4 @@
-﻿namespace Console.TickTest
+﻿namespace ConsoleApp.TickTest
 {
     internal class Program
     {
