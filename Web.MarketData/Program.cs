@@ -1,6 +1,9 @@
+using Application.MarketData.Workers;
+using Domain.DLL.Services;
 using Domain.MarketData.Business.Interfaces;
 using Infrastructure.MarketData.Options;
 using Infrastructure.MarketData.Persistence;
+using Infrastructure.MarketData.Providers;
 
 namespace Web.MarketData;
 
@@ -31,10 +34,10 @@ public class Program
             builder.Services.AddSingleton<ITradeTickRepository, ParquetTradeTickRepository>();
         }
 
-        // TODO: register MarketDataWorker + IMarketDataProvider once IMarketDataProvider
-        // has a concrete implementation (deferred - see Domain.DLL/Domain.Spode gap).
-        // Registering AddHostedService<MarketDataWorker>() before IMarketDataProvider
-        // exists would crash the app at startup under ValidateOnBuild.
+        builder.Services.AddSingleton<DLLService>();
+        builder.Services.AddSingleton<MarketDataCallbacks>();
+        builder.Services.AddSingleton<IMarketDataProvider, DllMarketDataProvider>();
+        builder.Services.AddHostedService<MarketDataWorker>();
 
         var app = builder.Build();
 
