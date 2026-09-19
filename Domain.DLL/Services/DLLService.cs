@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Runtime.InteropServices;
-using System.Text;
+using System;
 using Domain.DLL.Business;
 using Domain.DLL.Business.Interfaces;
-using Domain.DLL.Models;
 using Domain.DLL.Settings;
 using Microsoft.Extensions.Logging;
 
@@ -16,15 +11,6 @@ namespace Domain.DLL.Services
         private readonly ILogger<DLLService> _logger;
         private string _exchange;
         private DLLAuthParams _auth;
-        private double _takeProfitPoints;
-        private double _stopLossPoints;
-        private double _entryId;
-        public TConnectorAccountIdentifier _account;
-        public Dictionary<string, string> _dicOrders = new Dictionary<string, string>();
-
-        // Agent name cache: ID → name resolved via GetAgentName
-        // (calling the DLL can be expensive, especially in hot paths like building snapshots)
-        private readonly ConcurrentDictionary<int, string> _agentNameCache = new();
 
         public DLLService(ILogger<DLLService> logger)
         {
