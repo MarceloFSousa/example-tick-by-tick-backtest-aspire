@@ -44,9 +44,9 @@ namespace Domain.DLL.Services
             GC.Collect();
             GC.WaitForPendingFinalizers();
 
-            sbyte retVal;
+            int retVal;
 
-            retVal = (sbyte)DLLInitializeLogin(_auth.Key,
+            retVal = DLLInitializeLogin(_auth.Key,
                 _auth.User,
                 _auth.Password,
                 _stateCallback,
@@ -63,33 +63,33 @@ namespace Domain.DLL.Services
 
             if (retVal != NL_OK)
             {
-                throw new Exception($"Erro na inicialização: {retVal}");
+                throw new Exception($"Erro na inicialização: {(NResult)retVal}");
             }
             else
             {
-                retVal = (sbyte)SetAssetListInfoCallbackV2(_assetListInfoCallbackV2);
+                retVal = SetAssetListInfoCallbackV2(_assetListInfoCallbackV2);
 
                 if (retVal != NL_OK)
                 {
-                    throw new Exception($"Erro no SetAssetListInfoCallbackV2: {retVal}");
+                    throw new Exception($"Erro no SetAssetListInfoCallbackV2: {(NResult)retVal}");
                 }
-                retVal = (sbyte)SetOrderCallback(_orderCallback);
+                retVal = SetOrderCallback(_orderCallback);
 
                 if (retVal != NL_OK)
                 {
-                    throw new Exception($"Erro no SetOrderCallback: {retVal}");
+                    throw new Exception($"Erro no SetOrderCallback: {(NResult)retVal}");
                 }
-                retVal = (sbyte)SetAssetPositionListCallback(_positionCallback);
+                retVal = SetAssetPositionListCallback(_positionCallback);
 
                 if (retVal != NL_OK)
                 {
-                    throw new Exception($"Erro no SetAssetPositionListCallback: {retVal}");
+                    throw new Exception($"Erro no SetAssetPositionListCallback: {(NResult)retVal}");
                 }
-                retVal = (sbyte)SetChangeCotationCallback(_changeCotationCallback);
+                retVal = SetChangeCotationCallback(_changeCotationCallback);
 
                 if (retVal != NL_OK)
                 {
-                    throw new Exception($"Erro no SetChangeCotationCallback: {retVal}");
+                    throw new Exception($"Erro no SetChangeCotationCallback: {(NResult)retVal}");
                 }
             }
 
@@ -98,13 +98,13 @@ namespace Domain.DLL.Services
 
         public void GetHistory(DateTime start, DateTime end, string asset)
         {
-            sbyte retVal;
+            int retVal;
 
-            retVal = (sbyte)GetHistoryTrades(asset, _exchange, start.ToString(DATE_FORMAT), end.ToString(DATE_FORMAT));
+            retVal = GetHistoryTrades(asset, _exchange, start.ToString(DATE_FORMAT), end.ToString(DATE_FORMAT));
 
             if (retVal != NL_OK)
             {
-                throw new Exception($"Erro em carregar historico: {retVal}");
+                throw new Exception($"Erro em carregar historico: {(NResult)retVal}");
             }
 
             _logger.LogInformation("Requisitando historico");
