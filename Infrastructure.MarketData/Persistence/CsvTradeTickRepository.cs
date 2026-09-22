@@ -7,10 +7,14 @@ using Microsoft.Extensions.Options;
 
 namespace Infrastructure.MarketData.Persistence
 {
-    // Same partitioning/read-whole-file/mutate/atomic-rewrite approach as
-    // ParquetTradeTickRepository, with the same O(n)-per-mutation cost and coarse
-    // global file lock. CsvHelper has no async file I/O, so reads/writes run
-    // synchronously once the lock is acquired.
+    // Insert/InsertRange open the file in append mode and write only the new rows -
+    // no read of existing content needed, since CSV is just lines of text. Update/
+    // Delete still need the full read-modify-write-whole-file approach (same as
+    // ParquetTradeTickRepository) since a specific existing row has to be located
+    // and rewritten. CsvHelper has no async file I/O, so reads/writes run
+    // synchronously once the lock is acquired. A single global lock serializes all
+    // file mutations across every asset/day; simple and safe, coarser than
+    // strictly necessary.
     public class CsvTradeTickRepository : ITradeTickRepository
     {
         private readonly string _rootPath;
@@ -26,13 +30,12 @@ namespace Infrastructure.MarketData.Persistence
             if (tick.Id == Guid.Empty)
                 tick.Id = Guid.NewGuid();
 
+            var path = GetFilePath(tick.Asset.Exchange, tick.Asset.Ticker, tick.Timestamp);
+
             await _fileLock.WaitAsync(cancellationToken);
             try
             {
-                var path = GetFilePath(tick.Asset.Exchange, tick.Asset.Ticker, tick.Timestamp);
-                var records = ReadFile(path);
-                records.Add(TradeTickRecord.FromDomain(tick));
-                WriteFile(path, records);
+                AppendFile(path, new List<TradeTickRecord> { TradeTickRecord.FromDomain(tick) });
             }
             finally
             {
@@ -55,24 +58,22 @@ namespace Infrastructure.MarketData.Persistence
                 }
             }
 
-            // Grouped by asset-day so each file is read and rewritten once for the
-            // whole batch, instead of once per tick.
+            // Grouped by asset-day so each file gets one append per flush, instead
+            // of one append per tick.
             var groups = ticksList.GroupBy(t => (t.Asset.Exchange, t.Asset.Ticker, Date: t.Timestamp.Date));
 
-            foreach (var group in groups)
+            await _fileLock.WaitAsync(cancellationToken);
+            try
             {
-                await _fileLock.WaitAsync(cancellationToken);
-                try
+                foreach (var group in groups)
                 {
                     var path = GetFilePath(group.Key.Exchange, group.Key.Ticker, group.Key.Date);
-                    var records = ReadFile(path);
-                    records.AddRange(group.Select(TradeTickRecord.FromDomain));
-                    WriteFile(path, records);
+                    AppendFile(path, group.Select(TradeTickRecord.FromDomain).ToList());
                 }
-                finally
-                {
-                    _fileLock.Release();
-                }
+            }
+            finally
+            {
+                _fileLock.Release();
             }
         }
 
@@ -131,6 +132,18 @@ namespace Infrastructure.MarketData.Persistence
 
         private string GetFilePath(string exchange, string ticker, DateTime date) =>
             Path.Combine(_rootPath, exchange, ticker, $"{date:yyyy-MM-dd}.csv");
+
+        private static void AppendFile(string path, List<TradeTickRecord> records)
+        {
+            var directory = Path.GetDirectoryName(path);
+            if (!string.IsNullOrEmpty(directory))
+                Directory.CreateDirectory(directory);
+
+            using var stream = new FileStream(path, FileMode.Append, FileAccess.Write);
+            using var writer = new StreamWriter(stream);
+            using var csv = new CsvWriter(writer, CultureInfo.InvariantCulture);
+            csv.WriteRecords(records);
+        }
 
         private static List<TradeTickRecord> ReadFile(string path)
         {

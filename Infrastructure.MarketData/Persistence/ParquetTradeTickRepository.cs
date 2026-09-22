@@ -2,16 +2,19 @@ using Domain.MarketData.Business.Interfaces;
 using Domain.MarketData.Models;
 using Infrastructure.MarketData.Options;
 using Microsoft.Extensions.Options;
+using Parquet;
 using Parquet.Serialization;
 
 namespace Infrastructure.MarketData.Persistence
 {
-    // Parquet has no row-level update/delete: every mutation reads the whole
-    // asset-day file into memory, rewrites it, and atomically swaps it in. That's
-    // O(n) per Insert/Update/Delete for that asset-day - acceptable for tick
-    // archival/backtest workloads, not for high-frequency single-row mutations.
-    // A single global lock serializes all file mutations across every asset/day;
-    // simple and safe, coarser than strictly necessary.
+    // Insert/InsertRange use ParquetOptions.Append: Parquet.Net opens the existing
+    // file, seeks past the last row group, writes the new batch as its own row
+    // group, and rewrites only the (small) footer - the existing rows are never
+    // read or re-serialized. Update/Delete can't do this: Parquet has no row-level
+    // edit within an existing row group, so those still read the whole asset-day
+    // file, mutate in memory, and atomically swap it in. A single global lock
+    // serializes all file mutations across every asset/day; simple and safe,
+    // coarser than strictly necessary.
     public class ParquetTradeTickRepository : ITradeTickRepository
     {
         private readonly string _rootPath;
@@ -27,13 +30,12 @@ namespace Infrastructure.MarketData.Persistence
             if (tick.Id == Guid.Empty)
                 tick.Id = Guid.NewGuid();
 
+            var path = GetFilePath(tick.Asset.Exchange, tick.Asset.Ticker, tick.Timestamp);
+
             await _fileLock.WaitAsync(cancellationToken);
             try
             {
-                var path = GetFilePath(tick.Asset.Exchange, tick.Asset.Ticker, tick.Timestamp);
-                var records = await ReadFileAsync(path, cancellationToken);
-                records.Add(TradeTickRecord.FromDomain(tick));
-                await WriteFileAsync(path, records, cancellationToken);
+                await AppendAsync(path, new List<TradeTickRecord> { TradeTickRecord.FromDomain(tick) }, cancellationToken);
             }
             finally
             {
@@ -56,24 +58,22 @@ namespace Infrastructure.MarketData.Persistence
                 }
             }
 
-            // Grouped by asset-day so each file is read and rewritten once for the
-            // whole batch, instead of once per tick.
+            // Grouped by asset-day so each file gets one appended row group per
+            // flush, instead of one append per tick.
             var groups = ticksList.GroupBy(t => (t.Asset.Exchange, t.Asset.Ticker, Date: t.Timestamp.Date));
 
-            foreach (var group in groups)
+            await _fileLock.WaitAsync(cancellationToken);
+            try
             {
-                await _fileLock.WaitAsync(cancellationToken);
-                try
+                foreach (var group in groups)
                 {
                     var path = GetFilePath(group.Key.Exchange, group.Key.Ticker, group.Key.Date);
-                    var records = await ReadFileAsync(path, cancellationToken);
-                    records.AddRange(group.Select(TradeTickRecord.FromDomain));
-                    await WriteFileAsync(path, records, cancellationToken);
+                    await AppendAsync(path, group.Select(TradeTickRecord.FromDomain).ToList(), cancellationToken);
                 }
-                finally
-                {
-                    _fileLock.Release();
-                }
+            }
+            finally
+            {
+                _fileLock.Release();
             }
         }
 
@@ -132,6 +132,18 @@ namespace Infrastructure.MarketData.Persistence
 
         private string GetFilePath(string exchange, string ticker, DateTime date) =>
             Path.Combine(_rootPath, exchange, ticker, $"{date:yyyy-MM-dd}.parquet");
+
+        private static async Task AppendAsync(string path, List<TradeTickRecord> records, CancellationToken cancellationToken)
+        {
+            var directory = Path.GetDirectoryName(path);
+            if (!string.IsNullOrEmpty(directory))
+                Directory.CreateDirectory(directory);
+
+            var append = File.Exists(path);
+
+            await using var stream = new FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+            await ParquetSerializer.SerializeAsync(records, stream, new ParquetOptions { Append = append }, cancellationToken: cancellationToken);
+        }
 
         private static async Task<List<TradeTickRecord>> ReadFileAsync(string path, CancellationToken cancellationToken)
         {
