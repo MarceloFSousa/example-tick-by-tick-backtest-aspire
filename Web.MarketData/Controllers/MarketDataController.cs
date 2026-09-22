@@ -1,12 +1,13 @@
 using Domain.MarketData.Business.Interfaces;
 using Domain.MarketData.Models;
 using Microsoft.AspNetCore.Mvc;
+using Web.MarketData.DTOs;
 
 namespace Web.MarketData.Controllers
 {
     [ApiController]
     [Route("api/marketdata")]
-    public class MarketDataController : ControllerBase
+    public partial class MarketDataController : ControllerBase
     {
         private readonly IMarketDataProvider _provider;
 
@@ -14,8 +15,6 @@ namespace Web.MarketData.Controllers
         {
             _provider = provider;
         }
-
-        public record HistoricalDataRequest(string Ticker, string Exchange, DateTime Start, DateTime End);
 
         [HttpPost("historical")]
         public IActionResult RequestHistorical([FromBody] HistoricalDataRequest request)

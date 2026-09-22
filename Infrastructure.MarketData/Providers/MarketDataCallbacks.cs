@@ -20,13 +20,13 @@ namespace Infrastructure.MarketData.Providers
 
         public override void OnNewTrade(TAssetID assetId, string date, uint tradeNumber, double price, double vol, int qtd, int buyAgent, int sellAgent, int tradeType, int bIsEdit)
         {
-            base.OnNewTrade(assetId, date, tradeNumber, price, vol, qtd, buyAgent, sellAgent, tradeType, bIsEdit);
+            //base.OnNewTrade(assetId, date, tradeNumber, price, vol, qtd, buyAgent, sellAgent, tradeType, bIsEdit);
             TickReceived?.Invoke(Map(assetId, date, price, qtd, buyAgent, sellAgent, tradeType));
         }
 
         public override void OnNewHistory(TAssetID assetId, string date, uint tradeNumber, double price, double vol, int qtd, int buyAgent, int sellAgent, int tradeType)
         {
-            base.OnNewHistory(assetId, date, tradeNumber, price, vol, qtd, buyAgent, sellAgent, tradeType);
+            //base.OnNewHistory(assetId, date, tradeNumber, price, vol, qtd, buyAgent, sellAgent, tradeType);
             TickReceived?.Invoke(Map(assetId, date, price, qtd, buyAgent, sellAgent, tradeType));
         }
 
@@ -37,8 +37,6 @@ namespace Infrastructure.MarketData.Providers
             Timestamp = DateTime.Parse(date),
             Price = price,
             Quantity = qtd,
-            // EAggressor and ETradeType are declared with the same members in the same
-            // order (Buyer, Seller, RLP, Auction, Other), so this cast is a direct 1:1 map.
             Type = (ETradeType)(int)tradeType.ToAggressor(),
             Buyer = new Agent { Id = buyAgent },
             Seller = new Agent { Id = sellAgent }
