@@ -12,7 +12,7 @@ namespace Application.MarketData.Workers
     // since the last flush is never dropped.
     public class MarketDataWorker : BackgroundService
     {
-        private static readonly TimeSpan FlushInterval = TimeSpan.FromSeconds(30);
+        private static readonly TimeSpan FlushInterval = TimeSpan.FromSeconds(15);
 
         private readonly IMarketDataProvider _provider;
         private readonly ITradeTickRepository _repository;
