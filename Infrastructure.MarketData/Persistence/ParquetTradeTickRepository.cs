@@ -43,6 +43,40 @@ namespace Infrastructure.MarketData.Persistence
             return tick.Id;
         }
 
+        public async Task InsertRangeAsync(IEnumerable<TradeTick> ticks, CancellationToken cancellationToken = default)
+        {
+            var ticksList = ticks as IList<TradeTick> ?? ticks.ToList();
+            for (int i = 0; i < ticksList.Count; i++)
+            {
+                if (ticksList[i].Id == Guid.Empty)
+                {
+                    var tick = ticksList[i];
+                    tick.Id = Guid.NewGuid();
+                    ticksList[i] = tick;
+                }
+            }
+
+            // Grouped by asset-day so each file is read and rewritten once for the
+            // whole batch, instead of once per tick.
+            var groups = ticksList.GroupBy(t => (t.Asset.Exchange, t.Asset.Ticker, Date: t.Timestamp.Date));
+
+            foreach (var group in groups)
+            {
+                await _fileLock.WaitAsync(cancellationToken);
+                try
+                {
+                    var path = GetFilePath(group.Key.Exchange, group.Key.Ticker, group.Key.Date);
+                    var records = await ReadFileAsync(path, cancellationToken);
+                    records.AddRange(group.Select(TradeTickRecord.FromDomain));
+                    await WriteFileAsync(path, records, cancellationToken);
+                }
+                finally
+                {
+                    _fileLock.Release();
+                }
+            }
+        }
+
         public async Task<IReadOnlyList<TradeTick>> ReadAsync(string ticker, string exchange, DateTime startUtc, DateTime endUtc, CancellationToken cancellationToken = default)
         {
             var result = new List<TradeTick>();
