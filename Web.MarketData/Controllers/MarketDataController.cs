@@ -23,7 +23,7 @@ namespace Web.MarketData.Controllers
             var result = await _marketDataService.RequestHistoricalDataAsync(asset, request.Start, request.End, cancellationToken);
 
             // Nothing new to fetch: everything in the range is already stored.
-            if (result.RequestedRanges.Count == 0)
+            if (result.RequestedDays.Count == 0)
                 return Ok(result);
 
             // Ticks land asynchronously via OnDataReceived -> MarketDataWorker -> repository.
