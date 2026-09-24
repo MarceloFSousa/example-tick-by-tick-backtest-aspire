@@ -1,4 +1,4 @@
-using Domain.MarketData.Business.Interfaces;
+using Application.MarketData.Services;
 using Domain.MarketData.Models;
 using Microsoft.AspNetCore.Mvc;
 using Web.MarketData.DTOs;
@@ -9,19 +9,25 @@ namespace Web.MarketData.Controllers
     [Route("api/marketdata")]
     public partial class MarketDataController : ControllerBase
     {
-        private readonly IMarketDataProvider _provider;
+        private readonly IMarketDataService _marketDataService;
 
-        public MarketDataController(IMarketDataProvider provider)
+        public MarketDataController(IMarketDataService marketDataService)
         {
-            _provider = provider;
+            _marketDataService = marketDataService;
         }
 
         [HttpPost("historical")]
-        public IActionResult RequestHistorical([FromBody] HistoricalDataRequest request)
+        public async Task<IActionResult> RequestHistorical([FromBody] HistoricalDataRequest request, CancellationToken cancellationToken)
         {
-            _provider.SubscribeHistoricalData(new Asset { Ticker = request.Ticker, Exchange = request.Exchange }, request.Start, request.End);
+            var asset = new Asset { Ticker = request.Ticker, Exchange = request.Exchange };
+            var result = await _marketDataService.RequestHistoricalDataAsync(asset, request.Start, request.End, cancellationToken);
+
+            // Nothing new to fetch: everything in the range is already stored.
+            if (result.RequestedRanges.Count == 0)
+                return Ok(result);
+
             // Ticks land asynchronously via OnDataReceived -> MarketDataWorker -> repository.
-            return Accepted();
+            return Accepted(result);
         }
     }
 }

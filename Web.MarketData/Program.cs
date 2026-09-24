@@ -1,3 +1,4 @@
+using Application.MarketData.Services;
 using Application.MarketData.Workers;
 using Domain.DLL.Services;
 using Domain.MarketData.Business.Interfaces;
@@ -37,6 +38,7 @@ public class Program
         builder.Services.AddSingleton<DLLService>();
         builder.Services.AddSingleton<MarketDataCallbacks>();
         builder.Services.AddSingleton<IMarketDataProvider, DllMarketDataProvider>();
+        builder.Services.AddSingleton<IMarketDataService, MarketDataService>();
         builder.Services.AddHostedService<MarketDataWorker>();
 
         var app = builder.Build();
