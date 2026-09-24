@@ -77,6 +77,13 @@ namespace Infrastructure.MarketData.Persistence
             }
         }
 
+        public Task<bool> ExistsAsync(string ticker, string exchange, DateTime dateUtc, CancellationToken cancellationToken = default)
+        {
+            // An empty file (e.g. left behind by an interrupted write) doesn't count as data.
+            var file = new FileInfo(GetFilePath(exchange, ticker, dateUtc));
+            return Task.FromResult(file.Exists && file.Length > 0);
+        }
+
         public async Task<IReadOnlyList<TradeTick>> ReadAsync(string ticker, string exchange, DateTime startUtc, DateTime endUtc, CancellationToken cancellationToken = default)
         {
             var result = new List<TradeTick>();
