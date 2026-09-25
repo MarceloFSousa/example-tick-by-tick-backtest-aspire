@@ -39,9 +39,13 @@ Chosen by `MarketData:Storage:Provider` (`Parquet` default, or `Csv`). One file 
 - Interop types (`TConnector*`, `NResult`, `SystemTime`) are in the global namespace; other models are in `Domain.DLL.Models`.
 - Richer domain mapping is meant to happen in the application layer, not in `Domain.DLL`.
 
-## Backtest context (NOT implemented yet)
+## Backtest context (Domain + Infrastructure implemented)
 
-`Domain.TickTest`, `Application.TickTest`, `Infrastructure.TickTest`, `Web.TickTest`, `Console.TickTest` are empty scaffolds. Intended shape per the architecture diagram (`Diagrama.drawio` / `Program.drawio`): Domain (models/services/business) -> Application -> Console and API, with Application reading from the shared data store. Open decisions: whether backtest reads ticks via `ITradeTickRepository.ReadAsync` on the same Parquet/CSV files, and which project holds the engine logic. Update this section once decided.
+The Backtest context is **independent of MarketData by design**: it duplicates the models and storage code instead of referencing `Domain.MarketData`/`Infrastructure.MarketData`, and has no `Domain.DLL` dependency. Don't "de-duplicate" the two contexts.
+
+- `Domain.TickTest`: `Models/` (`TradeTick`, `Asset`, `Agent`, `ETradeType` - copies of the MarketData ones in namespace `Domain.TickTest.Models`; plus `Order`, `Position`, `EOrderSide`, `EOrderType`, `EOrderStatus`) and the port `Business/Interfaces/ITradeTickRepository`. `Position.Quantity` is signed (long > 0, short < 0).
+- `Infrastructure.TickTest`: `ParquetTradeTickRepository`, `CsvTradeTickRepository`, `TradeTickRecord`, `StorageOptions` - same code and same `{RootPath}/{Exchange}/{Ticker}/{yyyy-MM-dd}.parquet|csv` layout as MarketData, so Backtest reads the files MarketData wrote. `Order`/`Position` are not persisted.
+- `Application.TickTest`, `Web.TickTest`, `Console.TickTest` are still empty scaffolds. Intended shape per `Diagrama.drawio` / `Program.drawio`: Domain -> Application -> Console and API. Open: which project holds the engine logic. Update this section once decided.
 
 ## Conventions
 
