@@ -57,3 +57,4 @@ The Backtest context is **independent of MarketData by design**: it duplicates t
 
 - Feature work goes on branch `feature/marketdata-mining`; one commit per logical step, imperative message.
 - `Program.drawio` and `.$Program.drawio.bkp` are the user's diagram files - leave them out of commits unless asked.
+- Never add a `Co-Authored-By` trailer (or any attribution line) to commit messages.
