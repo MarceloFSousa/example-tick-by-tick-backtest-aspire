@@ -1,3 +1,10 @@
+using Application.MarketData.Services;
+using Application.MarketData.Workers;
+using Domain.DLL.Services;
+using Domain.MarketData.Business.Interfaces;
+using Infrastructure.MarketData.Options;
+using Infrastructure.MarketData.Persistence;
+using Infrastructure.MarketData.Providers;
 
 namespace Web.MarketData;
 
@@ -14,6 +21,25 @@ public class Program
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
+
+        builder.Services.Configure<StorageOptions>(builder.Configuration.GetSection("MarketData:Storage"));
+        builder.Services.Configure<DllCredentialsOptions>(builder.Configuration.GetSection("MarketData:DllCredentials"));
+
+        var storageProvider = builder.Configuration["MarketData:Storage:Provider"] ?? "Parquet";
+        if (string.Equals(storageProvider, "Csv", StringComparison.OrdinalIgnoreCase))
+        {
+            builder.Services.AddSingleton<ITradeTickRepository, CsvTradeTickRepository>();
+        }
+        else
+        {
+            builder.Services.AddSingleton<ITradeTickRepository, ParquetTradeTickRepository>();
+        }
+
+        builder.Services.AddSingleton<DLLService>();
+        builder.Services.AddSingleton<MarketDataCallbacks>();
+        builder.Services.AddSingleton<IMarketDataProvider, DllMarketDataProvider>();
+        builder.Services.AddSingleton<IMarketDataService, MarketDataService>();
+        builder.Services.AddHostedService<MarketDataWorker>();
 
         var app = builder.Build();
 
