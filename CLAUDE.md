@@ -45,12 +45,13 @@ The Backtest context is **independent of MarketData by design**: it duplicates t
 
 - `Domain.TickTest`: `Models/` (`TradeTick`, `Asset`, `Agent`, `ETradeType` - copies of the MarketData ones in namespace `Domain.TickTest.Models`; plus `Order`, `Position`, `EOrderSide`, `EOrderType`, `EOrderStatus`) and the port `Business/Interfaces/ITradeTickRepository`. `Position.Quantity` is signed (long > 0, short < 0).
 - `Infrastructure.TickTest`: `ParquetTradeTickRepository`, `CsvTradeTickRepository`, `TradeTickRecord`, `StorageOptions` - same code and same `{RootPath}/{Exchange}/{Ticker}/{yyyy-MM-dd}.parquet|csv` layout as MarketData, so Backtest reads the files MarketData wrote. `Order`/`Position` are not persisted.
-- `Application.TickTest`: `Handlers/IBacktestHandler` + `BacktestHandler` - the entry point Console/Web call with a `BacktestRequest` (Asset, Start, End). It reads `ITradeTickRepository` one day at a time (skips days with no data), orders each day's ticks by `Timestamp`, and walks them tick by tick; the engine body is still a TODO. Returns a `BacktestResult` (processed/skipped days, tick count). Not registered in DI yet.
+- `Application.TickTest`: `Handlers/IBacktestHandler` + `BacktestHandler` - the entry point Console/Web call with a `BacktestRequest` (Asset, Start, End, defined in `Domain.TickTest/Models`). It reads `ITradeTickRepository` one day at a time (skips days with no data), orders each day's ticks by `Timestamp`, and walks them tick by tick; the engine body is still a TODO. Returns a `BacktestResult` (processed/skipped days, tick count; also in `Domain.TickTest/Models`). Not registered in DI yet.
 - `Web.TickTest`, `Console.TickTest` are still empty scaffolds (don't reference Application yet). Intended shape per `Diagrama.drawio` / `Program.drawio`: Domain -> Application -> Console and API. Open: which project holds the engine logic. Update this section once decided.
 
 ## Conventions
 
 - Identifiers and comments in English; **log and exception message strings stay in Portuguese** (leave them as they are).
+- **Every model (struct/record/data class, including request/result types) lives in the `Models/` folder of its context's Domain project** (`Domain.MarketData` in `Data.TickTest/Models`, `Domain.TickTest/Models`). Never define models in `Handlers/`, `Services/`, `Persistence/` or other folders; persistence-only shapes like `TradeTickRecord` and web DTOs are the only exceptions, and stay in their own layer.
 - Models are `struct`s with public fields (matches existing `Domain.DLL`/`Domain.MarketData` style). Repository/service interfaces are async with `CancellationToken`.
 - Update this file when architecture changes.
 

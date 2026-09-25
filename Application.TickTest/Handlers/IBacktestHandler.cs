@@ -1,3 +1,5 @@
+using Domain.TickTest.Models;
+
 namespace Application.TickTest.Handlers
 {
     public interface IBacktestHandler

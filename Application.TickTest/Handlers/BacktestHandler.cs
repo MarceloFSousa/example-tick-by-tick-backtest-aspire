@@ -1,4 +1,5 @@
 using Domain.TickTest.Business.Interfaces;
+using Domain.TickTest.Models;
 using Microsoft.Extensions.Logging;
 
 namespace Application.TickTest.Handlers
@@ -56,7 +57,7 @@ namespace Application.TickTest.Handlers
                 "Backtest de {Ticker}: {Processed} dia(s) processado(s), {Skipped} dia(s) sem dados, {Ticks} tick(s)",
                 asset.Ticker, processedDays.Count, skippedDays.Count, tickCount);
 
-            return new BacktestResult(processedDays, skippedDays, tickCount);
+            return new BacktestResult { ProcessedDays = processedDays, SkippedDays = skippedDays, TickCount = tickCount };
         }
     }
 }
