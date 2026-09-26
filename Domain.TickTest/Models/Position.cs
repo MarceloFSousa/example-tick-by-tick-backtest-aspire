@@ -5,13 +5,13 @@ namespace Domain.TickTest.Models
     public struct Position
     {
         public Asset Asset;
-        // Signed: > 0 long, < 0 short, 0 flat.
+        public EPositionSide Side;
+        // Always >= 0 (the direction is in Side); 0 means flat.
         public double Quantity;
         public double AveragePrice;
         public double RealizedPnL;
-        public DateTime OpenedAt;
-        public DateTime? ClosedAt;
+        public DateTime OpenAt;
 
-        public override string ToString() => $"{Asset} {Quantity}@{AveragePrice} PnL:{RealizedPnL}";
+        public override string ToString() => $"{Asset} {Side} {Quantity}@{AveragePrice} PnL:{RealizedPnL}";
     }
 }

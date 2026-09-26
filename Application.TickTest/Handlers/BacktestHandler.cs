@@ -32,7 +32,7 @@ namespace Application.TickTest.Handlers
             {
                 Asset = asset,
                 Ticks = new List<TradeTick>(),
-                ClosedPositions = new List<Position>(),
+                ClosedPositions = new List<ClosedPosition>(),
                 Orders = new List<Order>()
             };
             long tickCount = 0;
@@ -69,7 +69,7 @@ namespace Application.TickTest.Handlers
                 ProcessedDays = processedDays,
                 SkippedDays = skippedDays,
                 TickCount = tickCount,
-                RealizedPnL = context.ClosedPositions.Sum(p => p.RealizedPnL) + context.Position.RealizedPnL,
+                RealizedPnL = context.ClosedPositions.Sum(p => p.PnL) + context.Position.RealizedPnL,
                 OpenPosition = context.Position,
                 ClosedPositions = context.ClosedPositions,
                 Orders = context.Orders
