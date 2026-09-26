@@ -6,9 +6,10 @@ namespace Application.TickTest.Handlers
 {
     // Entry point for Console/Web. Reads the stored ticks one day at a time (a day
     // can hold millions of ticks, so the whole range is never in memory), orders
-    // them newest first and hands each day to the backtest core through a single
-    // context that lives for the whole request. Days without stored data are
-    // skipped and reported back to the caller.
+    // them newest first and calls the backtest core once per tick through a single
+    // context that lives for the whole request (the core returns the updated
+    // context, which is what the final result is built from). Days without stored
+    // data are skipped and reported back to the caller.
     public class BacktestHandler : IBacktestHandler
     {
         private readonly ITradeTickRepository _repository;
@@ -27,7 +28,13 @@ namespace Application.TickTest.Handlers
             var asset = request.Asset;
             var processedDays = new List<DateTime>();
             var skippedDays = new List<DateTime>();
-            var context = new BacktestContext { Asset = asset };
+            var context = new BacktestContext
+            {
+                Asset = asset,
+                Ticks = new List<TradeTick>(),
+                ClosedPositions = new List<Position>(),
+                Orders = new List<Order>()
+            };
             long tickCount = 0;
 
             for (var day = request.Start.Date; day <= request.End.Date; day = day.AddDays(1))
@@ -44,10 +51,11 @@ namespace Application.TickTest.Handlers
 
                 // Files are appended in flushed batches, so file order is not guaranteed.
                 var ticks = await _repository.ReadAsync(asset.Ticker, asset.Exchange, dayStart, dayEnd, cancellationToken);
-                context.Ticks = ticks.OrderByDescending(t => t.Timestamp).ToList();
-
-                _core.Run(context, cancellationToken);
-                tickCount += context.Ticks.Count;
+                for(int i = 0; i<ticks.Count; i++){
+                    context.Ticks=ticks.Take(i).OrderByDescending(t=>t.Timestamp).ToList();
+                    context = _core.Run(context, cancellationToken);
+                }
+                tickCount += ticks.Count;
 
                 processedDays.Add(day);
             }
@@ -56,7 +64,16 @@ namespace Application.TickTest.Handlers
                 "Backtest de {Ticker}: {Processed} dia(s) processado(s), {Skipped} dia(s) sem dados, {Ticks} tick(s)",
                 asset.Ticker, processedDays.Count, skippedDays.Count, tickCount);
 
-            return new BacktestResult { ProcessedDays = processedDays, SkippedDays = skippedDays, TickCount = tickCount };
+            return new BacktestResult
+            {
+                ProcessedDays = processedDays,
+                SkippedDays = skippedDays,
+                TickCount = tickCount,
+                RealizedPnL = context.ClosedPositions.Sum(p => p.RealizedPnL) + context.Position.RealizedPnL,
+                OpenPosition = context.Position,
+                ClosedPositions = context.ClosedPositions,
+                Orders = context.Orders
+            };
         }
     }
 }

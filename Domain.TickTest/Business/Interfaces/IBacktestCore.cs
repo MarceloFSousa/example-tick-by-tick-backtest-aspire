@@ -4,6 +4,6 @@ namespace Domain.TickTest.Business.Interfaces
 {
     public interface IBacktestCore
     {
-        void Run(BacktestContext context, CancellationToken cancellationToken = default);
+        BacktestContext Run(BacktestContext context, CancellationToken cancellationToken = default);
     }
 }
