@@ -5,11 +5,12 @@ using Microsoft.Extensions.Logging;
 namespace Application.TickTest.Handlers
 {
     // Entry point for Console/Web. Reads the stored ticks one day at a time (a day
-    // can hold millions of ticks, so the whole range is never in memory), orders
-    // them newest first and calls the backtest core once per tick through a single
-    // context that lives for the whole request (the core returns the updated
-    // context, which is what the final result is built from). Days without stored
-    // data are skipped and reported back to the caller.
+    // can hold millions of ticks), orders each day oldest first and replays it tick
+    // by tick: every tick is appended to the single context that lives for the whole
+    // request (so Ticks[^1] is the current tick and the earlier ticks, from all days
+    // replayed so far, are the history) and the backtest core runs once per tick.
+    // The core returns the updated context, which is what the final result is built
+    // from. Days without stored data are skipped and reported back to the caller.
     public class BacktestHandler : IBacktestHandler
     {
         private readonly ITradeTickRepository _repository;
@@ -50,9 +51,13 @@ namespace Application.TickTest.Handlers
                 var dayEnd = day == request.End.Date ? request.End : day.AddDays(1).AddMilliseconds(-1);
 
                 // Files are appended in flushed batches, so file order is not guaranteed.
-                var ticks = await _repository.ReadAsync(asset.Ticker, asset.Exchange, dayStart, dayEnd, cancellationToken);
-                for(int i = 0; i<ticks.Count; i++){
-                    context.Ticks=ticks.Take(i).OrderByDescending(t=>t.Timestamp).ToList();
+                var ticks = (await _repository.ReadAsync(asset.Ticker, asset.Exchange, dayStart, dayEnd, cancellationToken))
+                    .OrderBy(t => t.Timestamp)
+                    .ToList();
+
+                foreach (var tick in ticks)
+                {
+                    context.Ticks.Add(tick);
                     context = _core.Run(context, cancellationToken);
                 }
                 tickCount += ticks.Count;
