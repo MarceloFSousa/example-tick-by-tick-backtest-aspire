@@ -10,13 +10,10 @@ namespace Domain.TickTest.Models
         public EOrderType Type;
         public double Quantity;
         public double Price;
-        public double StopPrice;
         public EOrderStatus Status;
         public DateTime CreatedAt;
-        public double FilledQuantity;
-        public double AverageFillPrice;
         public DateTime? FilledAt;
 
-        public override string ToString() => $"{Asset} {Side} {Type} {Quantity}@{Price} {Status} Filled:{FilledQuantity}@{AverageFillPrice}";
+        public override string ToString() => $"{Asset} {Side} {Type} {Quantity}@{Price} {Status}";
     }
 }

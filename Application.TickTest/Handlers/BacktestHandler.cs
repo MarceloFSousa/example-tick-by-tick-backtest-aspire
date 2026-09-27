@@ -69,7 +69,7 @@ namespace Application.TickTest.Handlers
                 ProcessedDays = processedDays,
                 SkippedDays = skippedDays,
                 TickCount = tickCount,
-                RealizedPnL = context.ClosedPositions.Sum(p => p.PnL) + context.Position.RealizedPnL,
+                RealizedPnL = context.ClosedPositions.Sum(p => p.PnL),
                 OpenPosition = context.Position,
                 ClosedPositions = context.ClosedPositions,
                 Orders = context.Orders
