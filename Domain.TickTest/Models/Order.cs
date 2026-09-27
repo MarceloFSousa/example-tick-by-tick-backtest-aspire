@@ -1,0 +1,19 @@
+using System;
+
+namespace Domain.TickTest.Models
+{
+    public struct Order
+    {
+        public Guid Id;
+        public Asset Asset;
+        public EOrderSide Side;
+        public EOrderType Type;
+        public double Quantity;
+        public double Price;
+        public EOrderStatus Status;
+        public DateTime CreatedAt;
+        public DateTime? FilledAt;
+
+        public override string ToString() => $"{Asset} {Side} {Type} {Quantity}@{Price} {Status}";
+    }
+}

@@ -1,3 +1,4 @@
+using Application.MarketData.Options;
 using Application.MarketData.Services;
 using Application.MarketData.Workers;
 using Domain.DLL.Services;
@@ -24,6 +25,7 @@ public class Program
 
         builder.Services.Configure<StorageOptions>(builder.Configuration.GetSection("MarketData:Storage"));
         builder.Services.Configure<DllCredentialsOptions>(builder.Configuration.GetSection("MarketData:DllCredentials"));
+        builder.Services.Configure<IngestionOptions>(builder.Configuration.GetSection("MarketData:Ingestion"));
 
         var storageProvider = builder.Configuration["MarketData:Storage:Provider"] ?? "Parquet";
         if (string.Equals(storageProvider, "Csv", StringComparison.OrdinalIgnoreCase))

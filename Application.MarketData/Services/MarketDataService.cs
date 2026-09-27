@@ -44,7 +44,7 @@ namespace Application.MarketData.Services
                 "Historical request for {Ticker}: {Requested} day(s) requested, {Skipped} day(s) already stored",
                 asset.Ticker, requestedDays.Count, skippedDays.Count);
 
-            return new HistoricalRequestResult(requestedDays, skippedDays);
+            return new HistoricalRequestResult { RequestedDays = requestedDays, SkippedDays = skippedDays };
         }
     }
 }

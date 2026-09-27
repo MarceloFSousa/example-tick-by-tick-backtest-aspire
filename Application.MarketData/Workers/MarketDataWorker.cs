@@ -1,8 +1,10 @@
 using System.Threading.Channels;
+using Application.MarketData.Options;
 using Domain.MarketData.Business.Interfaces;
 using Domain.MarketData.Models;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Application.MarketData.Workers
 {
@@ -17,6 +19,7 @@ namespace Application.MarketData.Workers
         private readonly IMarketDataProvider _provider;
         private readonly ITradeTickRepository _repository;
         private readonly ILogger<MarketDataWorker> _logger;
+        private readonly IngestionOptions _options;
         private readonly Channel<TradeTick> _channel = Channel.CreateUnbounded<TradeTick>(new UnboundedChannelOptions
         {
             SingleReader = true,
@@ -26,11 +29,12 @@ namespace Application.MarketData.Workers
         private readonly object _batchLock = new();
         private List<TradeTick> _batch = new();
 
-        public MarketDataWorker(IMarketDataProvider provider, ITradeTickRepository repository, ILogger<MarketDataWorker> logger)
+        public MarketDataWorker(IMarketDataProvider provider, ITradeTickRepository repository, ILogger<MarketDataWorker> logger, IOptions<IngestionOptions> options)
         {
             _provider = provider;
             _repository = repository;
             _logger = logger;
+            _options = options.Value;
             _provider.OnDataReceived += HandleTick;
         }
 
@@ -49,7 +53,7 @@ namespace Application.MarketData.Workers
 
         private void HandleTick(TradeTick tick)
         {
-            if (tick.Type != ETradeType.Buyer && tick.Type != ETradeType.Seller)
+            if (_options.IgnoreNonAggression && tick.Type != ETradeType.Buyer && tick.Type != ETradeType.Seller)
                 return;
 
             if (!_channel.Writer.TryWrite(tick))
