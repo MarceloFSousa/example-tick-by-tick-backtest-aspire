@@ -3,35 +3,35 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.12.35527.113
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Console.TickTest", "Console.TickTest\Console.TickTest.csproj", "{7EE9BB40-6D41-4299-AE0D-6B449E88D62D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Console.TickTest", "Backtest\Console.TickTest\Console.TickTest.csproj", "{7EE9BB40-6D41-4299-AE0D-6B449E88D62D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Domain.TickTest", "Domain.TickTest\Domain.TickTest.csproj", "{1EAAE6DC-202B-4F52-8C1E-6DF03D47DD39}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Domain.TickTest", "Backtest\Domain.TickTest\Domain.TickTest.csproj", "{1EAAE6DC-202B-4F52-8C1E-6DF03D47DD39}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Domain.MarketData", "Data.TickTest\Domain.MarketData.csproj", "{178A0323-3ACA-4223-BC9E-24361C75477C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Domain.MarketData", "MarketData\Domain.MarketData\Domain.MarketData.csproj", "{178A0323-3ACA-4223-BC9E-24361C75477C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Application.TickTest", "Application.TickTest\Application.TickTest.csproj", "{6CF31CB2-E5D4-40EB-A245-803FBF93655F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Application.TickTest", "Backtest\Application.TickTest\Application.TickTest.csproj", "{6CF31CB2-E5D4-40EB-A245-803FBF93655F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Application.MarketData", "Application.MarketData\Application.MarketData.csproj", "{C3C76E9F-21D6-46AD-9FF0-3CE48B09CED6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Application.MarketData", "MarketData\Application.MarketData\Application.MarketData.csproj", "{C3C76E9F-21D6-46AD-9FF0-3CE48B09CED6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Infrastructure.MarketData", "Infrastructure.MarketData\Infrastructure.MarketData.csproj", "{A218563C-CC80-4576-ADF5-B6BFB3B0B304}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Infrastructure.MarketData", "MarketData\Infrastructure.MarketData\Infrastructure.MarketData.csproj", "{A218563C-CC80-4576-ADF5-B6BFB3B0B304}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Infrastructure.TickTest", "Infrastructure.TickTest\Infrastructure.TickTest.csproj", "{F4559DE7-55C3-42E2-A304-74FCA1146E54}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Infrastructure.TickTest", "Backtest\Infrastructure.TickTest\Infrastructure.TickTest.csproj", "{F4559DE7-55C3-42E2-A304-74FCA1146E54}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TickTest", "TickTest", "{D8910CBF-0646-4A47-A22D-A17D90FCD35B}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Backtest", "Backtest", "{D8910CBF-0646-4A47-A22D-A17D90FCD35B}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "MarketData", "MarketData", "{CFB59547-85EC-42AD-8400-4749CA6E678F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Web.TickTest", "Web.TickTest\Web.TickTest.csproj", "{A935A8F5-4675-42C4-A868-CD6FC409BF7C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Web.TickTest", "Backtest\Web.TickTest\Web.TickTest.csproj", "{A935A8F5-4675-42C4-A868-CD6FC409BF7C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TickTest.AppHost", "TickTest.AppHost\TickTest.AppHost.csproj", "{6A812610-565B-45F9-89D3-B04E31939C32}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TickTest.ServiceDefaults", "TickTest.ServiceDefaults\TickTest.ServiceDefaults.csproj", "{E2CE552D-CF94-4E15-9051-71EC96BEC3C9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Web.MarketData", "Web.MarketData\Web.MarketData.csproj", "{EEB63707-213A-433E-91D7-9E5464EDEE85}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Web.MarketData", "MarketData\Web.MarketData\Web.MarketData.csproj", "{EEB63707-213A-433E-91D7-9E5464EDEE85}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Domain.DLL", "Domain.DLL\Domain.DLL.csproj", "{6C0274BA-BD66-41D1-92C7-89EB6261AD4F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Domain.DLL", "MarketData\Domain.DLL\Domain.DLL.csproj", "{6C0274BA-BD66-41D1-92C7-89EB6261AD4F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests.TickTest", "Tests.TickTest\Tests.TickTest.csproj", "{69B0D1FF-CF65-44D8-9E39-FAEC10E26E1B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests.TickTest", "Backtest\Tests.TickTest\Tests.TickTest.csproj", "{69B0D1FF-CF65-44D8-9E39-FAEC10E26E1B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -8,7 +8,7 @@ namespace ConsoleApp.TickTest
     public static class BacktestConsole
     {
         public const string Usage =
-            "Uso: dotnet run --project Console.TickTest -- --ticker WINFUT --exchange F --start 2025-01-02 --end 2025-01-10\n" +
+            "Uso: dotnet run --project Backtest/Console.TickTest -- --ticker WINFUT --exchange F --start 2025-01-02 --end 2025-01-10\n" +
             "  Sem argumentos, os parâmetros vêm da seção Backtest do appsettings.json (Ticker, Exchange, Start, End); argumentos têm prioridade.\n" +
             "  --start/--end: yyyy-MM-dd (um --end sem horário vai até o fim do dia)\n" +
             "  Opcional: --Backtest:Storage:Provider=Csv|Parquet  --Backtest:Storage:RootPath=<pasta>";

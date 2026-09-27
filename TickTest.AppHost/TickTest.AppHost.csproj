@@ -16,8 +16,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Web.MarketData\Web.MarketData.csproj" />
-    <ProjectReference Include="..\Web.TickTest\Web.TickTest.csproj" />
+    <ProjectReference Include="..\MarketData\Web.MarketData\Web.MarketData.csproj" />
+    <ProjectReference Include="..\Backtest\Web.TickTest\Web.TickTest.csproj" />
   </ItemGroup>
 
 </Project>

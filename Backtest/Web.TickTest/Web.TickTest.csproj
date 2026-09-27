@@ -11,7 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\TickTest.ServiceDefaults\TickTest.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\..\TickTest.ServiceDefaults\TickTest.ServiceDefaults.csproj" />
   </ItemGroup>
 
 </Project>
