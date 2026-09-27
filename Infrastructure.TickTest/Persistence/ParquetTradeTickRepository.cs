@@ -80,7 +80,8 @@ namespace Infrastructure.TickTest.Persistence
         public Task<bool> ExistsAsync(string ticker, string exchange, DateTime dateUtc, CancellationToken cancellationToken = default)
         {
             // An empty file (e.g. left behind by an interrupted write) doesn't count as data.
-            var file = new FileInfo(GetFilePath(exchange, ticker, dateUtc));
+            var path = GetFilePath(exchange, ticker, dateUtc);
+            var file = new FileInfo(path);
             return Task.FromResult(file.Exists && file.Length > 0);
         }
 
