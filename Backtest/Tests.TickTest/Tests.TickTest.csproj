@@ -22,6 +22,8 @@
     <ProjectReference Include="..\Application.TickTest\Application.TickTest.csproj" />
     <ProjectReference Include="..\Console.TickTest\Console.TickTest.csproj" />
     <ProjectReference Include="..\Domain.TickTest\Domain.TickTest.csproj" />
+    <ProjectReference Include="..\Infrastructure.TickTest\Infrastructure.TickTest.csproj" />
+    <ProjectReference Include="..\Web.TickTest\Web.TickTest.csproj" />
   </ItemGroup>
 
 </Project>
