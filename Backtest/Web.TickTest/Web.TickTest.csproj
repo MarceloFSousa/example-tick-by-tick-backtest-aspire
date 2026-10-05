@@ -11,6 +11,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Application.TickTest\Application.TickTest.csproj" />
+    <ProjectReference Include="..\Infrastructure.TickTest\Infrastructure.TickTest.csproj" />
     <ProjectReference Include="..\..\TickTest.ServiceDefaults\TickTest.ServiceDefaults.csproj" />
   </ItemGroup>
 
