@@ -75,6 +75,34 @@ dotnet run --project Backtest/Console.TickTest -- --ticker WINFUT --exchange F -
 - `Backtest:Storage:RootPath` must point at the same folder MarketData writes to (default `C:\MarketDataStore`).
 - Exit codes: `0` ok, `1` invalid args, `130` canceled (Ctrl+C).
 
+### 6. Or run the backtest through the API
+
+`Web.TickTest` exposes the same backtest over HTTP. A run can take a while, so the API does not wait for it: it answers with a **process id**, runs in the background and saves a **report file** when it ends.
+
+```bash
+dotnet run --project Backtest/Web.TickTest
+```
+
+Swagger: `http://localhost:5001/swagger`. Start a backtest (parameters in the body):
+
+```bash
+curl -X POST http://localhost:5001/api/backtest \
+  -H "Content-Type: application/json" \
+  -d '{ "ticker": "WINFUT", "exchange": "F", "start": "2026-09-15", "end": "2026-09-18" }'
+```
+
+It answers `202 Accepted` with the job (`id`, `status: "Pending"`) and a `Location` header. Follow it with the id:
+
+```bash
+curl http://localhost:5001/api/backtest/{id}
+```
+
+- `status` goes `Pending` -> `Running` -> `Completed` (or `Failed` / `Canceled`). While it runs `report` is `null`; when it ends the answer carries the full report (processed/skipped days, tick count, realized PnL, open position, closed positions, orders).
+- The report is also saved as `{Backtest:Reports:RootPath}/{id}.json` (default `C:\BacktestReports`), for failed and canceled runs too (`error` says why).
+- `400` when `ticker`/`exchange` is blank or `start` is after `end`; `404` for an unknown id. A date-only `end` means the end of that day.
+- Storage and report folders come from `Backtest:Storage` and `Backtest:Reports` in `Backtest/Web.TickTest/appsettings.json`.
+- One backtest runs at a time; the others wait as `Pending`. Jobs are kept in memory: restarting the API loses the pending/running ones (finished ones are still answered from their report file).
+
 ## Where to define the signal (strategy)
 
 The strategy lives in [`BacktestCore`](Backtest/Domain.TickTest/Business/Services/BacktestCore.cs), method `Run`. It is called **once per tick** and must **return the updated `BacktestContext`**:
@@ -114,6 +142,8 @@ Keep `BacktestCore` (and its tests) as the reference and add a new implementatio
    builder.Services.AddSingleton<IBacktestCore, MyStrategyCore>();   // was BacktestCore
    ```
 
+   (same line in [`Backtest/Web.TickTest/Program.cs`](Backtest/Web.TickTest/Program.cs) if you run it through the API)
+
 3. Add tests for the new class (use `Support/ContextBuilder`; test names follow `MethodUnderTest_Scenario_ExpectedBehavior`).
 
 ## Repository layout
@@ -134,17 +164,17 @@ TickTest.AppHost, TickTest.ServiceDefaults   (Aspire, shared, at the root)
 | `Domain.DLL` | P/Invoke wrapper over ProfitDLL |
 | `Web.MarketData` | MarketData composition root and API |
 | `Domain.TickTest` | Backtest models, `BacktestCore`, `TradeService`, `TradeRules` |
-| `Application.TickTest` | `BacktestHandler` (replays ticks day by day) |
-| `Infrastructure.TickTest` | Parquet/CSV repositories (read side) |
+| `Application.TickTest` | `BacktestHandler` (replays ticks day by day), `BacktestJobService` + `BacktestWorker` (background runs for the API) |
+| `Infrastructure.TickTest` | Parquet/CSV repositories (read side), JSON report repository |
 | `Console.TickTest` | Backtest composition root and entry point |
-| `Web.TickTest` | Empty scaffold (future backtest API) |
+| `Web.TickTest` | Backtest API (`POST /api/backtest`, `GET /api/backtest/{id}`) |
 | `Tests.TickTest` | xUnit tests for the Backtest context |
 
 See [`CLAUDE.md`](CLAUDE.md) for architecture details and conventions.
 
 ## To do
 
-- [ ] **Backtest API** - implement `Web.TickTest` (endpoint to start a backtest and return the result) on top of `IBacktestHandler`.
+- [x] **Backtest API** - `Web.TickTest` starts a backtest (`POST /api/backtest`), answers with a process id and saves a report file when it ends.
 - [ ] **Contexts talking to each other** - let Backtest ask the MarketData API for missing days instead of requiring the files to be there beforehand (keeping the contexts decoupled, e.g. via HTTP client behind a port).
 - [ ] **Slippage** - model price slippage on fills.
 - [ ] **Latency to entry** - delay order execution by a configurable latency (fill on a later tick).

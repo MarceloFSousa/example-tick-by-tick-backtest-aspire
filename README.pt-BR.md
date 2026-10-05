@@ -75,6 +75,34 @@ dotnet run --project Backtest/Console.TickTest -- --ticker WINFUT --exchange F -
 - `Backtest:Storage:RootPath` deve apontar para a mesma pasta onde o MarketData grava (padrão `C:\MarketDataStore`).
 - Códigos de saída: `0` ok, `1` argumentos inválidos, `130` cancelado (Ctrl+C).
 
+### 6. Ou rodar o backtest pela API
+
+O `Web.TickTest` expõe o mesmo backtest por HTTP. Uma execução pode demorar, então a API não espera por ela: responde com um **id de processo**, roda em segundo plano e salva um **arquivo de relatório** quando termina.
+
+```bash
+dotnet run --project Backtest/Web.TickTest
+```
+
+Swagger: `http://localhost:5001/swagger`. Iniciar um backtest (parâmetros no body):
+
+```bash
+curl -X POST http://localhost:5001/api/backtest \
+  -H "Content-Type: application/json" \
+  -d '{ "ticker": "WINFUT", "exchange": "F", "start": "2026-09-15", "end": "2026-09-18" }'
+```
+
+A resposta é `202 Accepted` com o job (`id`, `status: "Pending"`) e um header `Location`. Acompanhe pelo id:
+
+```bash
+curl http://localhost:5001/api/backtest/{id}
+```
+
+- `status` vai de `Pending` -> `Running` -> `Completed` (ou `Failed` / `Canceled`). Enquanto roda, `report` é `null`; quando termina, a resposta traz o relatório completo (dias processados/sem dados, quantidade de ticks, PnL realizado, posição aberta, posições fechadas, ordens).
+- O relatório também é salvo em `{Backtest:Reports:RootPath}/{id}.json` (padrão `C:\BacktestReports`), inclusive para execuções com falha ou canceladas (`error` diz o motivo).
+- `400` quando `ticker`/`exchange` está em branco ou `start` é depois de `end`; `404` para um id desconhecido. Um `end` só com data significa o fim daquele dia.
+- As pastas de dados e de relatórios vêm de `Backtest:Storage` e `Backtest:Reports` em `Backtest/Web.TickTest/appsettings.json`.
+- Roda um backtest por vez; os outros esperam como `Pending`. Os jobs ficam em memória: reiniciar a API perde os pendentes/em execução (os finalizados continuam sendo respondidos pelo arquivo de relatório).
+
 ## Onde definir o sinal (estratégia)
 
 A estratégia fica em [`BacktestCore`](Backtest/Domain.TickTest/Business/Services/BacktestCore.cs), método `Run`. Ele é chamado **uma vez por tick** e deve **retornar o `BacktestContext` atualizado**:
@@ -114,6 +142,8 @@ Mantenha o `BacktestCore` (e seus testes) como referência e adicione uma nova i
    builder.Services.AddSingleton<IBacktestCore, MyStrategyCore>();   // era BacktestCore
    ```
 
+   (mesma linha em [`Backtest/Web.TickTest/Program.cs`](Backtest/Web.TickTest/Program.cs) se você rodar pela API)
+
 3. Adicione testes para a nova classe (use `Support/ContextBuilder`; nomes de teste seguem `MethodUnderTest_Scenario_ExpectedBehavior`).
 
 ## Estrutura de pastas
@@ -134,17 +164,17 @@ TickTest.AppHost, TickTest.ServiceDefaults   (Aspire, compartilhados, na raiz)
 | `Domain.DLL` | Wrapper P/Invoke sobre a ProfitDLL |
 | `Web.MarketData` | Composition root e API do MarketData |
 | `Domain.TickTest` | Modelos do Backtest, `BacktestCore`, `TradeService`, `TradeRules` |
-| `Application.TickTest` | `BacktestHandler` (reproduz os ticks dia a dia) |
-| `Infrastructure.TickTest` | Repositórios Parquet/CSV (lado de leitura) |
+| `Application.TickTest` | `BacktestHandler` (reproduz os ticks dia a dia), `BacktestJobService` + `BacktestWorker` (execuções em segundo plano para a API) |
+| `Infrastructure.TickTest` | Repositórios Parquet/CSV (lado de leitura), repositório JSON de relatórios |
 | `Console.TickTest` | Composition root e ponto de entrada do Backtest |
-| `Web.TickTest` | Scaffold vazio (futura API de backtest) |
+| `Web.TickTest` | API do Backtest (`POST /api/backtest`, `GET /api/backtest/{id}`) |
 | `Tests.TickTest` | Testes xUnit do contexto Backtest |
 
 Veja o [`CLAUDE.md`](CLAUDE.md) para detalhes de arquitetura e convenções (em inglês).
 
 ## A fazer
 
-- [ ] **API do Backtest** - implementar o `Web.TickTest` (endpoint para iniciar um backtest e devolver o resultado) sobre o `IBacktestHandler`.
+- [x] **API do Backtest** - o `Web.TickTest` inicia um backtest (`POST /api/backtest`), responde com um id de processo e salva um arquivo de relatório quando termina.
 - [ ] **Contextos conversando entre si** - fazer o Backtest pedir à API do MarketData os dias faltantes, em vez de exigir que os arquivos já existam (mantendo os contextos desacoplados, ex.: cliente HTTP atrás de uma porta).
 - [ ] **Slippage** - modelar o slippage de preço nas execuções.
 - [ ] **Latência de entrada** - atrasar a execução das ordens por uma latência configurável (executar em um tick posterior).
