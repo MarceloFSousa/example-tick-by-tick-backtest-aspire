@@ -73,7 +73,8 @@ dotnet run --project Backtest/Console.TickTest -- --ticker WINFUT --exchange F -
 - Dates are `yyyy-MM-dd`; a date-only `--end` means the end of that day.
 - Any config key can be overridden, e.g. `--Backtest:Storage:RootPath=D:\Data`.
 - `Backtest:Storage:RootPath` must point at the same folder MarketData writes to (default `C:\MarketDataStore`).
-- Exit codes: `0` ok, `1` invalid args, `130` canceled (Ctrl+C).
+- When the run ends, a report file is saved as `{Backtest:Reports:RootPath}/{id}.json` (default `C:\BacktestReports`) and its path is printed (`Relatório: ...`).
+- Exit codes: `0` ok, `1` invalid args, `2` backtest failed, `130` canceled (Ctrl+C).
 
 ### 6. Or run the backtest through the API
 

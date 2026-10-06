@@ -73,7 +73,8 @@ dotnet run --project Backtest/Console.TickTest -- --ticker WINFUT --exchange F -
 - Datas no formato `yyyy-MM-dd`; um `--end` só com data significa o fim daquele dia.
 - Qualquer chave de configuração pode ser sobrescrita, ex.: `--Backtest:Storage:RootPath=D:\Data`.
 - `Backtest:Storage:RootPath` deve apontar para a mesma pasta onde o MarketData grava (padrão `C:\MarketDataStore`).
-- Códigos de saída: `0` ok, `1` argumentos inválidos, `130` cancelado (Ctrl+C).
+- Quando a execução termina, um arquivo de relatório é salvo em `{Backtest:Reports:RootPath}/{id}.json` (padrão `C:\BacktestReports`) e o caminho é impresso (`Relatório: ...`).
+- Códigos de saída: `0` ok, `1` argumentos inválidos, `2` backtest falhou, `130` cancelado (Ctrl+C).
 
 ### 6. Ou rodar o backtest pela API
 
