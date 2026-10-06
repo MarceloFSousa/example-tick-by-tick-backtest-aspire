@@ -85,7 +85,7 @@ The result (printed and saved in the report) brings these statistics, all comput
 | `Costs` | Filled contracts x cost per contract |
 | `RealizedPnL` | `GrossPnL - Costs` |
 | `NumberOfTrades` | Closed positions |
-| `WinRate` | Winning trades / trades (0 to 1) |
+| `WinRate` | Percentage of winning trades (0 to 100) |
 | `ProfitFactor` | Sum of the winning trades / sum of the losing trades (`0` when no trade lost) |
 | `PayOff` | `RealizedPnL / NumberOfTrades` (average net result per trade) |
 

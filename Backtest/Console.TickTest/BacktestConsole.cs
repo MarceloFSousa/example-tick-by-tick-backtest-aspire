@@ -102,7 +102,7 @@ namespace ConsoleApp.TickTest
             writer.WriteLine($"Custos: {result.Costs.ToString("N2", CultureInfo.InvariantCulture)}");
             writer.WriteLine($"PnL realizado: {result.RealizedPnL.ToString("N2", CultureInfo.InvariantCulture)}");
             writer.WriteLine($"Trades: {result.NumberOfTrades}");
-            writer.WriteLine($"Taxa de acerto: {(result.WinRate * 100).ToString("N2", CultureInfo.InvariantCulture)}%");
+            writer.WriteLine($"Taxa de acerto: {result.WinRate.ToString("N2", CultureInfo.InvariantCulture)}%");
             writer.WriteLine($"Fator de lucro: {result.ProfitFactor.ToString("N2", CultureInfo.InvariantCulture)}");
             writer.WriteLine($"Payoff: {result.PayOff.ToString("N2", CultureInfo.InvariantCulture)}");
             writer.WriteLine($"Posição aberta: {(result.OpenPosition.Quantity > 0 ? result.OpenPosition.ToString() : "nenhuma")}");

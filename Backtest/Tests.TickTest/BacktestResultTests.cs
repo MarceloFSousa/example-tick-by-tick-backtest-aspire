@@ -73,21 +73,21 @@ namespace Tests.TickTest
         }
 
         [Fact]
-        public void WinRate_OneWinnerInFour_IsAQuarter()
+        public void WinRate_OneWinnerInFour_Is25Percent()
         {
-            Assert.Equal(0.25, Result(costs: 0, 30, -10, -5, -1).WinRate);
+            Assert.Equal(25, Result(costs: 0, 30, -10, -5, -1).WinRate);
         }
 
         [Fact]
         public void WinRate_BreakevenTrade_IsNotAWin()
         {
-            Assert.Equal(0.5, Result(costs: 0, 30, 0).WinRate);
+            Assert.Equal(50, Result(costs: 0, 30, 0).WinRate);
         }
 
         [Fact]
         public void WinRate_Costs_DoNotChangeIt()
         {
-            Assert.Equal(1, Result(costs: 100, 30).WinRate);
+            Assert.Equal(100, Result(costs: 100, 30).WinRate);
         }
 
         [Fact]
@@ -127,7 +127,7 @@ namespace Tests.TickTest
             };
 
             Assert.Equal(15, result.GrossPnL);
-            Assert.Equal(0.5, result.WinRate);
+            Assert.Equal(50, result.WinRate);
             Assert.Equal(4, result.ProfitFactor);
         }
     }

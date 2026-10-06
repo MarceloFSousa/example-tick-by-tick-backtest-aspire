@@ -85,7 +85,7 @@ O resultado (impresso e salvo no relatório) traz estas estatísticas, todas cal
 | `Costs` | Contratos executados x custo por contrato |
 | `RealizedPnL` | `GrossPnL - Costs` |
 | `NumberOfTrades` | Posições fechadas |
-| `WinRate` | Trades vencedores / trades (0 a 1) |
+| `WinRate` | Percentual de trades vencedores (0 a 100) |
 | `ProfitFactor` | Soma dos trades vencedores / soma dos perdedores (`0` quando nenhum trade perdeu) |
 | `PayOff` | `RealizedPnL / NumberOfTrades` (resultado líquido médio por trade) |
 

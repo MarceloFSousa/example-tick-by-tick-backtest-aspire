@@ -28,8 +28,8 @@ namespace Domain.TickTest.Models
 
         public readonly int NumberOfTrades => ClosedPositions?.Count ?? 0;
 
-        // Winning trades / trades, from 0 to 1.
-        public readonly double WinRate => NumberOfTrades == 0 ? 0 : (double)ClosedPositions.Count(p => p.PnL > 0) / NumberOfTrades;
+        // Percentage of winning trades, from 0 to 100.
+        public readonly double WinRate => NumberOfTrades == 0 ? 0 : 100.0 * ClosedPositions.Count(p => p.PnL > 0) / NumberOfTrades;
 
         // Sum of the winning trades / sum of the losing trades (absolute). 0 when no trade lost.
         public readonly double ProfitFactor
