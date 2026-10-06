@@ -11,6 +11,7 @@ namespace Application.TickTest.Handlers
     // replayed so far, are the history) and the backtest core runs once per tick.
     // The core returns the updated context, which is what the final result is built
     // from. Days without stored data are skipped and reported back to the caller.
+    // Costs are charged per contract of every filled order (request.CostPerContract).
     public class BacktestHandler : IBacktestHandler
     {
         private readonly ITradeTickRepository _repository;
@@ -74,10 +75,10 @@ namespace Application.TickTest.Handlers
                 ProcessedDays = processedDays,
                 SkippedDays = skippedDays,
                 TickCount = tickCount,
-                RealizedPnL = context.ClosedPositions.Sum(p => p.PnL),
                 OpenPosition = context.Position,
                 ClosedPositions = context.ClosedPositions,
-                Orders = context.Orders
+                Orders = context.Orders,
+                Costs = context.Orders.Where(o => o.Status == EOrderStatus.Filled).Sum(o => o.Quantity) * request.CostPerContract
             };
         }
     }

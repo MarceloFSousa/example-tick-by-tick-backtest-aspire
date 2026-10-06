@@ -152,6 +152,45 @@ namespace Tests.TickTest
             Assert.Null(BacktestConsole.GetParameter(Config(), "Ticker"));
         }
 
+        // ---- TryReadCost ----
+
+        [Fact]
+        public void TryReadRequest_NoCost_DefaultsToZero()
+        {
+            var config = Config(("ticker", "WINFUT"), ("exchange", "F"), ("start", "2025-01-02"), ("end", "2025-01-10"));
+
+            Assert.True(BacktestConsole.TryReadRequest(config, out var request, out _));
+            Assert.Equal(0, request.CostPerContract);
+        }
+
+        [Fact]
+        public void TryReadRequest_CostArgAndAppsettings_ArgWins()
+        {
+            var config = Config(("ticker", "WINFUT"), ("exchange", "F"), ("start", "2025-01-02"), ("end", "2025-01-10"),
+                ("Backtest:CostPerContract", "0.25"), ("cost", "1.5"));
+
+            Assert.True(BacktestConsole.TryReadRequest(config, out var request, out _));
+            Assert.Equal(1.5, request.CostPerContract);
+        }
+
+        [Theory]
+        [InlineData("abc")]
+        [InlineData("-1")]
+        public void TryReadRequest_InvalidCost_Fails(string cost)
+        {
+            var config = Config(("ticker", "WINFUT"), ("exchange", "F"), ("start", "2025-01-02"), ("end", "2025-01-10"), ("cost", cost));
+
+            Assert.False(BacktestConsole.TryReadRequest(config, out _, out var error));
+            Assert.Contains("cost", error);
+        }
+
+        [Fact]
+        public void TryReadCost_OnlyAppsettings_ReadsInvariantNumber()
+        {
+            Assert.True(BacktestConsole.TryReadCost(Config(("Backtest:CostPerContract", "0.25")), out var cost));
+            Assert.Equal(0.25, cost);
+        }
+
         // ---- TryParseDate ----
 
         [Theory]
@@ -179,9 +218,8 @@ namespace Tests.TickTest
             ProcessedDays = new List<DateTime> { new(2025, 1, 2), new(2025, 1, 4) },
             SkippedDays = new List<DateTime> { new(2025, 1, 3) },
             TickCount = 5,
-            RealizedPnL = 1234.5,
             OpenPosition = default,
-            ClosedPositions = new List<ClosedPosition> { new() { Asset = TestAsset, Side = EPositionSide.Long, Quantity = 1, EntryPrice = 100, ExitPrice = 110 } },
+            ClosedPositions = new List<ClosedPosition> { new() { Asset = TestAsset, Side = EPositionSide.Long, Quantity = 1, EntryPrice = 100, ExitPrice = 1334.5 } },
             Orders = new List<Order> { new() { Asset = TestAsset, Side = EOrderSide.Buy, Type = EOrderType.Market, Quantity = 1 } }
         };
 
@@ -197,7 +235,13 @@ namespace Tests.TickTest
             Assert.Contains("Dias processados: 2", text);
             Assert.Contains("Dias sem dados: 1 (2025-01-03)", text);
             Assert.Contains("Ticks: 5", text);
+            Assert.Contains("PnL bruto: 1,234.50", text);
+            Assert.Contains("Custos: 0.00", text);
             Assert.Contains("PnL realizado: 1,234.50", text);
+            Assert.Contains("Trades: 1", text);
+            Assert.Contains("Taxa de acerto: 100.00%", text);
+            Assert.Contains("Fator de lucro: 0.00", text);
+            Assert.Contains("Payoff: 1,234.50", text);
             Assert.Contains("Posição aberta: nenhuma", text);
             Assert.Contains("Posições fechadas: 1", text);
             Assert.Contains("Ordens: 1", text);

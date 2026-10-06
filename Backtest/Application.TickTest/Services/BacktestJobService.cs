@@ -58,7 +58,7 @@ namespace Application.TickTest.Services
             return new BacktestJob
             {
                 Id = saved.Id,
-                Request = new BacktestRequest { Asset = saved.Asset, Start = saved.Start, End = saved.End },
+                Request = new BacktestRequest { Asset = saved.Asset, Start = saved.Start, End = saved.End, CostPerContract = saved.CostPerContract },
                 Status = saved.Status,
                 CreatedAt = saved.CreatedAt,
                 StartedAt = saved.StartedAt,
@@ -111,6 +111,7 @@ namespace Application.TickTest.Services
                     Asset = job.Request.Asset,
                     Start = job.Request.Start,
                     End = job.Request.End,
+                    CostPerContract = job.Request.CostPerContract,
                     Status = job.Status,
                     CreatedAt = job.CreatedAt,
                     StartedAt = job.StartedAt,

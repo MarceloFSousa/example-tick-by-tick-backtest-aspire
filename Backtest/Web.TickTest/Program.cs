@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using Application.TickTest.Handlers;
+using Application.TickTest.Options;
 using Application.TickTest.Services;
 using Application.TickTest.Workers;
 using Domain.TickTest.Business.Interfaces;
@@ -28,6 +29,7 @@ public class Program
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
 
+        builder.Services.Configure<BacktestOptions>(builder.Configuration.GetSection("Backtest"));
         builder.Services.Configure<StorageOptions>(builder.Configuration.GetSection("Backtest:Storage"));
         builder.Services.Configure<ReportOptions>(builder.Configuration.GetSection("Backtest:Reports"));
 

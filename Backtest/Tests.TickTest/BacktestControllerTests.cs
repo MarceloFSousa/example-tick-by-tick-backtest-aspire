@@ -1,3 +1,4 @@
+using Application.TickTest.Options;
 using Application.TickTest.Services;
 using Domain.TickTest.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -21,7 +22,7 @@ namespace Tests.TickTest
         public BacktestControllerTests()
         {
             _service = new BacktestJobService(_handler, _reports, NullLogger<BacktestJobService>.Instance);
-            _controller = new BacktestController(_service);
+            _controller = new BacktestController(_service, Microsoft.Extensions.Options.Options.Create(new BacktestOptions { CostPerContract = 0.5 }));
         }
 
         [Fact]
@@ -81,6 +82,30 @@ namespace Tests.TickTest
         public void Start_StartAfterEnd_ReturnsBadRequest()
         {
             var result = _controller.Start(new BacktestApiRequest("WINFUT", "F", End.AddDays(5), End));
+
+            Assert.IsType<BadRequestObjectResult>(result);
+        }
+
+        [Fact]
+        public void Start_NoCostInBody_UsesConfiguredCost()
+        {
+            var accepted = (AcceptedAtActionResult)_controller.Start(new BacktestApiRequest("WINFUT", "F", Start, End));
+
+            Assert.Equal(0.5, ((BacktestJob)accepted.Value!).Request.CostPerContract);
+        }
+
+        [Fact]
+        public void Start_CostInBody_OverridesConfiguredCost()
+        {
+            var accepted = (AcceptedAtActionResult)_controller.Start(new BacktestApiRequest("WINFUT", "F", Start, End, 2));
+
+            Assert.Equal(2, ((BacktestJob)accepted.Value!).Request.CostPerContract);
+        }
+
+        [Fact]
+        public void Start_NegativeCost_ReturnsBadRequest()
+        {
+            var result = _controller.Start(new BacktestApiRequest("WINFUT", "F", Start, End, -1));
 
             Assert.IsType<BadRequestObjectResult>(result);
         }

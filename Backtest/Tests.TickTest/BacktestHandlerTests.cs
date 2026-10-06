@@ -142,6 +142,33 @@ namespace Tests.TickTest
         }
 
         [Fact]
+        public async Task HandleAsync_CostPerContract_ChargesEveryFilledContract()
+        {
+            // Open long, close, open short: 3 filled orders of 1 contract.
+            var repository = new FakeTradeTickRepository().WithDay(Day1,
+                Tick(Day1.AddHours(9), price: 100, quantity: 600, type: ETradeType.Buyer),
+                Tick(Day1.AddHours(9).AddMinutes(30), price: 110, quantity: 600, type: ETradeType.Seller));
+            var request = Request(Day1, Day1);
+            request.CostPerContract = 0.5;
+
+            var result = await Handler(repository, new BacktestCore()).HandleAsync(request);
+
+            Assert.Equal(1.5, result.Costs);
+            Assert.Equal(10, result.GrossPnL);
+            Assert.Equal(8.5, result.RealizedPnL);
+        }
+
+        [Fact]
+        public async Task HandleAsync_NoCostPerContract_HasNoCosts()
+        {
+            var repository = new FakeTradeTickRepository().WithDay(Day1, Tick(Day1.AddHours(9), quantity: 600));
+
+            var result = await Handler(repository, new BacktestCore()).HandleAsync(Request(Day1, Day1));
+
+            Assert.Equal(0, result.Costs);
+        }
+
+        [Fact]
         public async Task HandleAsync_CanceledToken_Throws()
         {
             var repository = new FakeTradeTickRepository().WithDay(Day1, Tick(Day1.AddHours(9), quantity: 600));

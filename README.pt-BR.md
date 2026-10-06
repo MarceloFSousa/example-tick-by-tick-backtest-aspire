@@ -71,10 +71,25 @@ dotnet run --project Backtest/Console.TickTest -- --ticker WINFUT --exchange F -
 ```
 
 - Datas no formato `yyyy-MM-dd`; um `--end` só com data significa o fim daquele dia.
+- `--cost 1.5` (ou `Backtest:CostPerContract` no appsettings, padrão `0`) é o custo cobrado **por contrato em cada execução** (entrada e saída), na mesma unidade do PnL.
 - Qualquer chave de configuração pode ser sobrescrita, ex.: `--Backtest:Storage:RootPath=D:\Data`.
 - `Backtest:Storage:RootPath` deve apontar para a mesma pasta onde o MarketData grava (padrão `C:\MarketDataStore`).
 - Quando a execução termina, um arquivo de relatório é salvo em `{Backtest:Reports:RootPath}/{id}.json` (padrão `C:\BacktestReports`) e o caminho é impresso (`Relatório: ...`).
 - Códigos de saída: `0` ok, `1` argumentos inválidos, `2` backtest falhou, `130` cancelado (Ctrl+C).
+
+O resultado (impresso e salvo no relatório) traz estas estatísticas, todas calculadas a partir das posições fechadas:
+
+| Campo | Significado |
+| --- | --- |
+| `GrossPnL` | Soma do PnL dos trades, antes dos custos |
+| `Costs` | Contratos executados x custo por contrato |
+| `RealizedPnL` | `GrossPnL - Costs` |
+| `NumberOfTrades` | Posições fechadas |
+| `WinRate` | Trades vencedores / trades (0 a 1) |
+| `ProfitFactor` | Soma dos trades vencedores / soma dos perdedores (`0` quando nenhum trade perdeu) |
+| `PayOff` | `RealizedPnL / NumberOfTrades` (resultado líquido médio por trade) |
+
+Um trade ganha ou perde pelo seu próprio PnL, antes dos custos. A posição ainda aberta no fim não entra.
 
 ### 6. Ou rodar o backtest pela API
 
@@ -89,8 +104,10 @@ Swagger: `http://localhost:5001/swagger`. Iniciar um backtest (parâmetros no bo
 ```bash
 curl -X POST http://localhost:5001/api/backtest \
   -H "Content-Type: application/json" \
-  -d '{ "ticker": "WINFUT", "exchange": "F", "start": "2026-09-15", "end": "2026-09-18" }'
+  -d '{ "ticker": "WINFUT", "exchange": "F", "start": "2026-09-15", "end": "2026-09-18", "costPerContract": 1.5 }'
 ```
+
+`costPerContract` é opcional: sem ele a API usa `Backtest:CostPerContract` do appsettings dela (padrão `0`). Um valor negativo é `400`.
 
 A resposta é `202 Accepted` com o job (`id`, `status: "Pending"`) e um header `Location`. Acompanhe pelo id:
 

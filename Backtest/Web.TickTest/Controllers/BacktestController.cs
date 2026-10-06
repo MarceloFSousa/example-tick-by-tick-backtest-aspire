@@ -1,6 +1,8 @@
+using Application.TickTest.Options;
 using Application.TickTest.Services;
 using Domain.TickTest.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using Web.TickTest.DTOs;
 
 namespace Web.TickTest.Controllers
@@ -10,10 +12,12 @@ namespace Web.TickTest.Controllers
     public class BacktestController : ControllerBase
     {
         private readonly IBacktestJobService _jobService;
+        private readonly BacktestOptions _options;
 
-        public BacktestController(IBacktestJobService jobService)
+        public BacktestController(IBacktestJobService jobService, IOptions<BacktestOptions> options)
         {
             _jobService = jobService;
+            _options = options.Value;
         }
 
         [HttpPost]
@@ -34,11 +38,17 @@ namespace Web.TickTest.Controllers
             if (request.Start > end)
                 return BadRequest("start deve ser menor ou igual a end.");
 
+            // Optional in the body; Backtest:CostPerContract is the default.
+            var costPerContract = request.CostPerContract ?? _options.CostPerContract;
+            if (costPerContract < 0)
+                return BadRequest("costPerContract deve ser maior ou igual a zero.");
+
             var job = _jobService.Enqueue(new BacktestRequest
             {
                 Asset = new Asset { Ticker = request.Ticker.Trim(), Exchange = request.Exchange.Trim() },
                 Start = request.Start,
-                End = end
+                End = end,
+                CostPerContract = costPerContract
             });
 
             // The run happens in the background (BacktestWorker); follow it with GET api/backtest/{id}.

@@ -13,10 +13,18 @@ namespace Tests.TickTest
         {
             Asset = TestAsset,
             Start = new DateTime(2025, 1, 2),
-            End = new DateTime(2025, 1, 3)
+            End = new DateTime(2025, 1, 3),
+            CostPerContract = 0.5
         };
 
-        private readonly FakeBacktestHandler _handler = new() { Result = new BacktestResult { TickCount = 42, RealizedPnL = 10 } };
+        private readonly FakeBacktestHandler _handler = new()
+        {
+            Result = new BacktestResult
+            {
+                TickCount = 42,
+                ClosedPositions = new List<ClosedPosition> { new() { Side = EPositionSide.Long, Quantity = 1, EntryPrice = 100, ExitPrice = 110 } }
+            }
+        };
         private readonly FakeBacktestReportRepository _reports = new();
 
         private BacktestJobService Service() => new(_handler, _reports, NullLogger<BacktestJobService>.Instance);
@@ -54,6 +62,7 @@ namespace Tests.TickTest
             Assert.Equal(TestAsset.Ticker, report.Asset.Ticker);
             Assert.Equal(Request.Start, report.Start);
             Assert.Equal(Request.End, report.End);
+            Assert.Equal(0.5, report.CostPerContract);
             Assert.Equal(42, report.Result.TickCount);
             Assert.Equal(10, report.Result.RealizedPnL);
         }

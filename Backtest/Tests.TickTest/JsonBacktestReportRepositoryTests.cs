@@ -36,7 +36,7 @@ namespace Tests.TickTest
                 ProcessedDays = new List<DateTime> { new(2025, 1, 2) },
                 SkippedDays = new List<DateTime> { new(2025, 1, 3) },
                 TickCount = 3,
-                RealizedPnL = 12.5,
+                Costs = 2.5,
                 OpenPosition = new Position { Asset = TestAsset, Side = EPositionSide.Short, Quantity = 1, AveragePrice = 105, OpenAt = T0 },
                 ClosedPositions = new List<ClosedPosition>
                 {
@@ -85,7 +85,9 @@ namespace Tests.TickTest
             Assert.Equal(T0.AddSeconds(5), report.FinishedAt);
             Assert.Null(report.Error);
             Assert.Equal(3, report.Result.TickCount);
-            Assert.Equal(12.5, report.Result.RealizedPnL);
+            Assert.Equal(2.5, report.Result.Costs);
+            Assert.Equal(12.5, report.Result.GrossPnL);
+            Assert.Equal(10, report.Result.RealizedPnL);
             Assert.Equal(new DateTime(2025, 1, 2), Assert.Single(report.Result.ProcessedDays));
             Assert.Equal(EPositionSide.Short, report.Result.OpenPosition.Side);
             Assert.Equal(112.5, Assert.Single(report.Result.ClosedPositions).ExitPrice);

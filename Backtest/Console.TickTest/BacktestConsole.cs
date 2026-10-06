@@ -11,6 +11,7 @@ namespace ConsoleApp.TickTest
             "Uso: dotnet run --project Backtest/Console.TickTest -- --ticker WINFUT --exchange F --start 2025-01-02 --end 2025-01-10\n" +
             "  Sem argumentos, os parâmetros vêm da seção Backtest do appsettings.json (Ticker, Exchange, Start, End); argumentos têm prioridade.\n" +
             "  --start/--end: yyyy-MM-dd (um --end sem horário vai até o fim do dia)\n" +
+            "  --cost: custo por contrato em cada execução (ou Backtest:CostPerContract no appsettings.json; padrão 0)\n" +
             "  Opcional: --Backtest:Storage:Provider=Csv|Parquet  --Backtest:Storage:RootPath=<pasta>";
 
         // Each parameter comes from the command-line arg (--ticker) when it is given,
@@ -50,11 +51,18 @@ namespace ConsoleApp.TickTest
                 return false;
             }
 
+            if (!TryReadCost(configuration, out var costPerContract))
+            {
+                error = "cost inválido: informe um número maior ou igual a zero (--cost ou Backtest:CostPerContract no appsettings.json).";
+                return false;
+            }
+
             request = new BacktestRequest
             {
                 Asset = new Asset { Ticker = ticker, Exchange = exchange },
                 Start = start,
-                End = end
+                End = end,
+                CostPerContract = costPerContract
             };
             error = string.Empty;
             return true;
@@ -64,6 +72,19 @@ namespace ConsoleApp.TickTest
         {
             var fromArgs = configuration[name.ToLowerInvariant()];
             return !string.IsNullOrWhiteSpace(fromArgs) ? fromArgs : configuration[$"Backtest:{name}"];
+        }
+
+        // Optional: --cost when given, otherwise Backtest:CostPerContract, otherwise 0.
+        public static bool TryReadCost(IConfiguration configuration, out double costPerContract)
+        {
+            costPerContract = 0;
+
+            var fromArgs = configuration["cost"];
+            var value = !string.IsNullOrWhiteSpace(fromArgs) ? fromArgs : configuration["Backtest:CostPerContract"];
+            if (string.IsNullOrWhiteSpace(value))
+                return true;
+
+            return double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out costPerContract) && costPerContract >= 0;
         }
 
         public static bool TryParseDate(string? value, out DateTime date) =>
@@ -77,7 +98,13 @@ namespace ConsoleApp.TickTest
             writer.WriteLine($"Dias sem dados: {result.SkippedDays.Count}" +
                 (result.SkippedDays.Count > 0 ? $" ({string.Join(", ", result.SkippedDays.Select(d => d.ToString("yyyy-MM-dd")))})" : string.Empty));
             writer.WriteLine($"Ticks: {result.TickCount}");
+            writer.WriteLine($"PnL bruto: {result.GrossPnL.ToString("N2", CultureInfo.InvariantCulture)}");
+            writer.WriteLine($"Custos: {result.Costs.ToString("N2", CultureInfo.InvariantCulture)}");
             writer.WriteLine($"PnL realizado: {result.RealizedPnL.ToString("N2", CultureInfo.InvariantCulture)}");
+            writer.WriteLine($"Trades: {result.NumberOfTrades}");
+            writer.WriteLine($"Taxa de acerto: {(result.WinRate * 100).ToString("N2", CultureInfo.InvariantCulture)}%");
+            writer.WriteLine($"Fator de lucro: {result.ProfitFactor.ToString("N2", CultureInfo.InvariantCulture)}");
+            writer.WriteLine($"Payoff: {result.PayOff.ToString("N2", CultureInfo.InvariantCulture)}");
             writer.WriteLine($"Posição aberta: {(result.OpenPosition.Quantity > 0 ? result.OpenPosition.ToString() : "nenhuma")}");
             writer.WriteLine($"Posições fechadas: {result.ClosedPositions.Count}");
             foreach (var closed in result.ClosedPositions)

@@ -10,6 +10,7 @@ namespace Domain.TickTest.Models
         public Asset Asset;
         public DateTime Start;
         public DateTime End;
+        public double CostPerContract;
         public EBacktestStatus Status;
         public DateTime CreatedAt;
         public DateTime? StartedAt;

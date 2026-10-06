@@ -71,10 +71,25 @@ dotnet run --project Backtest/Console.TickTest -- --ticker WINFUT --exchange F -
 ```
 
 - Dates are `yyyy-MM-dd`; a date-only `--end` means the end of that day.
+- `--cost 1.5` (or `Backtest:CostPerContract` in the appsettings, default `0`) is the cost charged **per contract on every fill** (entry and exit), in the same unit as the PnL.
 - Any config key can be overridden, e.g. `--Backtest:Storage:RootPath=D:\Data`.
 - `Backtest:Storage:RootPath` must point at the same folder MarketData writes to (default `C:\MarketDataStore`).
 - When the run ends, a report file is saved as `{Backtest:Reports:RootPath}/{id}.json` (default `C:\BacktestReports`) and its path is printed (`Relatório: ...`).
 - Exit codes: `0` ok, `1` invalid args, `2` backtest failed, `130` canceled (Ctrl+C).
+
+The result (printed and saved in the report) brings these statistics, all computed from the closed positions:
+
+| Field | Meaning |
+| --- | --- |
+| `GrossPnL` | Sum of the trades' PnL, before costs |
+| `Costs` | Filled contracts x cost per contract |
+| `RealizedPnL` | `GrossPnL - Costs` |
+| `NumberOfTrades` | Closed positions |
+| `WinRate` | Winning trades / trades (0 to 1) |
+| `ProfitFactor` | Sum of the winning trades / sum of the losing trades (`0` when no trade lost) |
+| `PayOff` | `RealizedPnL / NumberOfTrades` (average net result per trade) |
+
+A trade wins or loses by its own PnL, before costs. The position still open at the end is not included.
 
 ### 6. Or run the backtest through the API
 
@@ -89,8 +104,10 @@ Swagger: `http://localhost:5001/swagger`. Start a backtest (parameters in the bo
 ```bash
 curl -X POST http://localhost:5001/api/backtest \
   -H "Content-Type: application/json" \
-  -d '{ "ticker": "WINFUT", "exchange": "F", "start": "2026-09-15", "end": "2026-09-18" }'
+  -d '{ "ticker": "WINFUT", "exchange": "F", "start": "2026-09-15", "end": "2026-09-18", "costPerContract": 1.5 }'
 ```
+
+`costPerContract` is optional: without it the API uses `Backtest:CostPerContract` from its appsettings (default `0`). A negative value is a `400`.
 
 It answers `202 Accepted` with the job (`id`, `status: "Pending"`) and a `Location` header. Follow it with the id:
 
