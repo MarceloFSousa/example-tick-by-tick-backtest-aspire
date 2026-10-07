@@ -1,4 +1,6 @@
 using Application.TickTest.Handlers;
+using Application.TickTest.Services;
+using Domain.TickTest.Models;
 using Domain.TickTest.Business.Interfaces;
 using Domain.TickTest.Business.Services;
 using Infrastructure.TickTest.Options;
@@ -11,14 +13,21 @@ namespace ConsoleApp.TickTest
 {
     // Composition root of the Backtest context: wires the DI container and runs one
     // backtest. Parameters come from the args (--ticker, --exchange, --start, --end)
-    // or, when an arg is missing, from Backtest in appsettings.json.
+    // or, when an arg is missing, from Backtest in appsettings.json. The run goes
+    // through the same job service as the API, so it also saves a report file.
     internal class Program
     {
         static async Task<int> Main(string[] args)
         {
-            var builder = Host.CreateApplicationBuilder(args);
+            // appsettings.json sits next to the executable, not in the caller's current directory.
+            var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings
+            {
+                Args = args,
+                ContentRootPath = AppContext.BaseDirectory
+            });
 
             builder.Services.Configure<StorageOptions>(builder.Configuration.GetSection("Backtest:Storage"));
+            builder.Services.Configure<ReportOptions>(builder.Configuration.GetSection("Backtest:Reports"));
 
             var storageProvider = builder.Configuration["Backtest:Storage:Provider"] ?? "Parquet";
             if (string.Equals(storageProvider, "Csv", StringComparison.OrdinalIgnoreCase))
@@ -32,6 +41,8 @@ namespace ConsoleApp.TickTest
 
             builder.Services.AddSingleton<IBacktestCore, BacktestCore>();
             builder.Services.AddSingleton<IBacktestHandler, BacktestHandler>();
+            builder.Services.AddSingleton<IBacktestReportRepository, JsonBacktestReportRepository>();
+            builder.Services.AddSingleton<IBacktestJobService, BacktestJobService>();
 
             if (!BacktestConsole.TryReadRequest(builder.Configuration, out var request, out var error))
             {
@@ -41,7 +52,7 @@ namespace ConsoleApp.TickTest
             }
 
             using var host = builder.Build();
-            var handler = host.Services.GetRequiredService<IBacktestHandler>();
+            var jobs = host.Services.GetRequiredService<IBacktestJobService>();
 
             using var cts = new CancellationTokenSource();
             Console.CancelKeyPress += (_, e) =>
@@ -50,17 +61,27 @@ namespace ConsoleApp.TickTest
                 cts.Cancel();
             };
 
-            try
-            {
-                var result = await handler.HandleAsync(request, cts.Token);
-                BacktestConsole.PrintResult(request, result, Console.Out);
-                return 0;
-            }
-            catch (OperationCanceledException)
-            {
+            // Runs here instead of in BacktestWorker: the console waits for its single run.
+            var id = jobs.Enqueue(request).Id;
+            await jobs.ProcessAsync(id, cts.Token);
+            var job = (await jobs.GetAsync(id))!.Value;
+
+            if (job.Status == EBacktestStatus.Completed && await jobs.GetReportAsync(id) is { } report)
+                BacktestConsole.PrintResult(request, report.Result, Console.Out);
+            else if (job.Status == EBacktestStatus.Canceled)
                 Console.Error.WriteLine("Backtest cancelado.");
-                return 130;
-            }
+            else
+                Console.Error.WriteLine($"Backtest falhou: {job.Error}");
+
+            if (job.ReportPath is not null)
+                Console.Out.WriteLine($"Relatório: {job.ReportPath}");
+
+            return job.Status switch
+            {
+                EBacktestStatus.Completed => 0,
+                EBacktestStatus.Canceled => 130,
+                _ => 2
+            };
         }
     }
 }
