@@ -10,7 +10,8 @@ namespace Infrastructure.MarketData.Persistence
     // Insert/InsertRange use ParquetOptions.Append: Parquet.Net opens the existing
     // file, seeks past the last row group, writes the new batch as its own row
     // group, and rewrites only the (small) footer - the existing rows are never
-    // read or re-serialized. Update/Delete can't do this: Parquet has no row-level
+    // read or re-serialized (only the first append to an existing file reads it
+    // once, to find its last Id). Update/Delete can't do this: Parquet has no row-level
     // edit within an existing row group, so those still read the whole asset-day
     // file, mutate in memory, and atomically swap it in. A single global lock
     // serializes all file mutations across every asset/day; simple and safe,
@@ -19,23 +20,23 @@ namespace Infrastructure.MarketData.Persistence
     {
         private readonly string _rootPath;
         private static readonly SemaphoreSlim _fileLock = new(1, 1);
+        private static readonly Dictionary<string, int> _lastIds = new();
 
         public ParquetTradeTickRepository(IOptions<StorageOptions> options)
         {
             _rootPath = options.Value.RootPath;
         }
 
-        public async Task<Guid> InsertAsync(TradeTick tick, CancellationToken cancellationToken = default)
+        public async Task<int> InsertAsync(TradeTick tick, CancellationToken cancellationToken = default)
         {
-            if (tick.Id == Guid.Empty)
-                tick.Id = Guid.NewGuid();
-
             var path = GetFilePath(tick.Asset.Exchange, tick.Asset.Ticker, tick.Timestamp);
 
             await _fileLock.WaitAsync(cancellationToken);
             try
             {
+                tick.Id = await GetLastIdAsync(path, cancellationToken) + 1;
                 await AppendAsync(path, new List<TradeTickRecord> { TradeTickRecord.FromDomain(tick) }, cancellationToken);
+                _lastIds[path] = tick.Id;
             }
             finally
             {
@@ -47,20 +48,9 @@ namespace Infrastructure.MarketData.Persistence
 
         public async Task InsertRangeAsync(IEnumerable<TradeTick> ticks, CancellationToken cancellationToken = default)
         {
-            var ticksList = ticks as IList<TradeTick> ?? ticks.ToList();
-            for (int i = 0; i < ticksList.Count; i++)
-            {
-                if (ticksList[i].Id == Guid.Empty)
-                {
-                    var tick = ticksList[i];
-                    tick.Id = Guid.NewGuid();
-                    ticksList[i] = tick;
-                }
-            }
-
             // Grouped by asset-day so each file gets one appended row group per
             // flush, instead of one append per tick.
-            var groups = ticksList.GroupBy(t => (t.Asset.Exchange, t.Asset.Ticker, Date: t.Timestamp.Date));
+            var groups = ticks.GroupBy(t => (t.Asset.Exchange, t.Asset.Ticker, Date: t.Timestamp.Date));
 
             await _fileLock.WaitAsync(cancellationToken);
             try
@@ -68,7 +58,17 @@ namespace Infrastructure.MarketData.Persistence
                 foreach (var group in groups)
                 {
                     var path = GetFilePath(group.Key.Exchange, group.Key.Ticker, group.Key.Date);
-                    await AppendAsync(path, group.Select(TradeTickRecord.FromDomain).ToList(), cancellationToken);
+                    var lastId = await GetLastIdAsync(path, cancellationToken);
+                    var records = new List<TradeTickRecord>();
+                    foreach (var tick in group)
+                    {
+                        var record = TradeTickRecord.FromDomain(tick);
+                        record.Id = ++lastId;
+                        records.Add(record);
+                    }
+
+                    await AppendAsync(path, records, cancellationToken);
+                    _lastIds[path] = lastId;
                 }
             }
             finally
@@ -119,7 +119,7 @@ namespace Infrastructure.MarketData.Persistence
             }
         }
 
-        public async Task<bool> DeleteAsync(Guid id, string ticker, string exchange, DateTime dateUtc, CancellationToken cancellationToken = default)
+        public async Task<bool> DeleteAsync(int id, string ticker, string exchange, DateTime dateUtc, CancellationToken cancellationToken = default)
         {
             await _fileLock.WaitAsync(cancellationToken);
             try
@@ -139,6 +139,20 @@ namespace Infrastructure.MarketData.Persistence
 
         private string GetFilePath(string exchange, string ticker, DateTime date) =>
             Path.Combine(_rootPath, exchange, ticker, $"{date:yyyy-MM-dd}.parquet");
+
+        // Ids are sequential per asset-day file, like an identity column. The last
+        // one is read from the file the first time it is appended to and cached
+        // from then on. Call only while holding the lock.
+        private static async Task<int> GetLastIdAsync(string path, CancellationToken cancellationToken)
+        {
+            if (_lastIds.TryGetValue(path, out var lastId))
+                return lastId;
+
+            var records = await ReadFileAsync(path, cancellationToken);
+            lastId = records.Count == 0 ? 0 : records.Max(r => r.Id);
+            _lastIds[path] = lastId;
+            return lastId;
+        }
 
         private static async Task AppendAsync(string path, List<TradeTickRecord> records, CancellationToken cancellationToken)
         {

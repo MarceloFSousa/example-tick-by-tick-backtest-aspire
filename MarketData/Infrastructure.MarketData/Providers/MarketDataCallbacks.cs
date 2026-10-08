@@ -32,7 +32,6 @@ namespace Infrastructure.MarketData.Providers
 
         private static TradeTick Map(TAssetID assetId, string date, double price, int qtd, int buyAgent, int sellAgent, int tradeType) => new()
         {
-            Id = Guid.NewGuid(),
             Asset = new Asset { Ticker = assetId.Ticker, Exchange = assetId.Exchange },
             Timestamp = DateTime.Parse(date),
             Price = price,
