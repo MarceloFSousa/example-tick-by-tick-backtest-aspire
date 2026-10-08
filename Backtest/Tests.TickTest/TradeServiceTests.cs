@@ -1,5 +1,6 @@
 using Domain.TickTest.Business.Services;
 using Domain.TickTest.Models;
+using Domain.TickTest.Enums;
 using Tests.TickTest.Support;
 using static Tests.TickTest.Support.ContextBuilder;
 
@@ -275,6 +276,149 @@ namespace Tests.TickTest
         public void VerifyOpenOrders_NoTick_Throws()
         {
             Assert.Throws<InvalidOperationException>(() => TradeService.VerifyOpenOrders(Empty()));
+        }
+
+        // ---- Take profit / stop loss ----
+
+        [Fact]
+        public void OpenPosition_WithTakeProfitAndStopLoss_SetsThemOnThePosition()
+        {
+            var context = TradeService.OpenPosition(Empty().WithTick(100), EPositionSide.Long, 1,
+                takeProfitPrice: 110, stopLossPrice: 95);
+
+            Assert.Equal(110, context.Position.TakeProfit!.Value.Price);
+            Assert.Equal(95, context.Position.StopLoss!.Value.Price);
+            Assert.Single(context.Orders);
+        }
+
+        [Theory]
+        [InlineData(0.0, null)]
+        [InlineData(-1.0, null)]
+        [InlineData(null, 0.0)]
+        [InlineData(null, -1.0)]
+        public void SendOrder_NonPositiveTakeProfitOrStopLoss_Throws(double? takeProfitPrice, double? stopLossPrice)
+        {
+            var context = Empty().WithTick(100);
+            var order = MarketOrder(EOrderSide.Buy, 1);
+            order.TakeProfitPrice = takeProfitPrice;
+            order.StopLossPrice = stopLossPrice;
+
+            Assert.Throws<ArgumentException>(() => TradeService.SendOrder(context, order));
+        }
+
+        [Fact]
+        public void VerifyOpenOrders_TakeProfitHit_ClosesAtItsPriceAndCancelsStopLoss()
+        {
+            var context = TradeService.OpenPosition(Empty().WithTick(100), EPositionSide.Long, 1,
+                takeProfitPrice: 110, stopLossPrice: 95);
+
+            context = TradeService.VerifyOpenOrders(context.WithTick(111, minute: 1));
+
+            Assert.Equal(0, context.Position.Quantity);
+            Assert.Null(context.Position.TakeProfit);
+            Assert.Null(context.Position.StopLoss);
+            var closed = Assert.Single(context.ClosedPositions);
+            Assert.Equal(110, closed.ExitPrice);
+            Assert.Equal(10, closed.PnL);
+
+            Assert.Equal(3, context.Orders.Count);
+            var takeProfit = Assert.Single(context.Orders, o => o.Type == EOrderType.Limit);
+            Assert.Equal(EOrderStatus.Filled, takeProfit.Status);
+            Assert.Equal(T0.AddMinutes(1), takeProfit.FilledAt);
+            var stopLoss = Assert.Single(context.Orders, o => o.Type == EOrderType.Stop);
+            Assert.Equal(EOrderStatus.Canceled, stopLoss.Status);
+        }
+
+        [Fact]
+        public void VerifyOpenOrders_StopLossHit_ClosesAtTickPriceAndCancelsTakeProfit()
+        {
+            var context = TradeService.OpenPosition(Empty().WithTick(100), EPositionSide.Long, 1,
+                takeProfitPrice: 110, stopLossPrice: 95);
+
+            context = TradeService.VerifyOpenOrders(context.WithTick(94, minute: 1));
+
+            Assert.Equal(0, context.Position.Quantity);
+            var closed = Assert.Single(context.ClosedPositions);
+            Assert.Equal(94, closed.ExitPrice);
+            Assert.Equal(-6, closed.PnL);
+
+            var stopLoss = Assert.Single(context.Orders, o => o.Type == EOrderType.Stop);
+            Assert.Equal(EOrderStatus.Filled, stopLoss.Status);
+            Assert.Equal(94, stopLoss.Price);
+            var takeProfit = Assert.Single(context.Orders, o => o.Type == EOrderType.Limit);
+            Assert.Equal(EOrderStatus.Canceled, takeProfit.Status);
+        }
+
+        [Theory]
+        [InlineData(89, 90, 10)]   // take profit: limit buy fills at its own price
+        [InlineData(106, 106, -6)] // stop loss: stop buy fills at the tick price
+        public void VerifyOpenOrders_ShortProtectionHit_ClosesPosition(double tickPrice, double exitPrice, double pnl)
+        {
+            var context = TradeService.OpenPosition(Empty().WithTick(100), EPositionSide.Short, 1,
+                takeProfitPrice: 90, stopLossPrice: 105);
+
+            context = TradeService.VerifyOpenOrders(context.WithTick(tickPrice, minute: 1));
+
+            Assert.Equal(0, context.Position.Quantity);
+            var closed = Assert.Single(context.ClosedPositions);
+            Assert.Equal(exitPrice, closed.ExitPrice);
+            Assert.Equal(pnl, closed.PnL);
+        }
+
+        [Fact]
+        public void VerifyOpenOrders_ProtectionNotHit_KeepsPositionAndOrders()
+        {
+            var context = TradeService.OpenPosition(Empty().WithTick(100), EPositionSide.Long, 1,
+                takeProfitPrice: 110, stopLossPrice: 95);
+
+            context = TradeService.VerifyOpenOrders(context.WithTick(105, minute: 1));
+
+            Assert.Equal(1, context.Position.Quantity);
+            Assert.NotNull(context.Position.TakeProfit);
+            Assert.NotNull(context.Position.StopLoss);
+            Assert.Single(context.Orders);
+            Assert.Empty(context.ClosedPositions);
+        }
+
+        [Fact]
+        public void VerifyOpenOrders_OnlyStopLossHit_FillsWithoutCanceledOrder()
+        {
+            var context = TradeService.OpenPosition(Empty().WithTick(100), EPositionSide.Long, 1, stopLossPrice: 95);
+
+            context = TradeService.VerifyOpenOrders(context.WithTick(95, minute: 1));
+
+            Assert.Equal(0, context.Position.Quantity);
+            Assert.Equal(2, context.Orders.Count);
+            Assert.All(context.Orders, o => Assert.Equal(EOrderStatus.Filled, o.Status));
+        }
+
+        [Fact]
+        public void VerifyOpenOrders_PendingLimitWithTakeProfitAndStopLoss_SetsThemWhenItFills()
+        {
+            var order = LimitOrder(EOrderSide.Buy, 1, 98);
+            order.TakeProfitPrice = 110;
+            order.StopLossPrice = 95;
+            var context = TradeService.SendOrder(Empty().WithTick(100), order);
+            Assert.Null(context.Position.TakeProfit);
+
+            context = TradeService.VerifyOpenOrders(context.WithTick(97, minute: 1));
+
+            Assert.Equal(1, context.Position.Quantity);
+            Assert.Equal(110, context.Position.TakeProfit!.Value.Price);
+            Assert.Equal(95, context.Position.StopLoss!.Value.Price);
+        }
+
+        [Fact]
+        public void ClosePosition_WithProtectionOrders_DropsThemWithoutRecording()
+        {
+            var context = TradeService.OpenPosition(Empty().WithTick(100), EPositionSide.Long, 1,
+                takeProfitPrice: 110, stopLossPrice: 95);
+
+            context = TradeService.ClosePosition(context.WithTick(102, minute: 1));
+
+            Assert.Null(context.Position.TakeProfit);
+            Assert.Null(context.Position.StopLoss);
+            Assert.Equal(2, context.Orders.Count);
         }
 
         // ---- End to end ----

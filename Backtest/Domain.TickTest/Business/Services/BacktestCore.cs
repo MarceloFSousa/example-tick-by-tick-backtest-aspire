@@ -1,5 +1,6 @@
 using Domain.TickTest.Business.Interfaces;
 using Domain.TickTest.Models;
+using Domain.TickTest.Enums;
 
 namespace Domain.TickTest.Business.Services
 {

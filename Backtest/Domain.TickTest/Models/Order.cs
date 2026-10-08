@@ -1,4 +1,5 @@
 using System;
+using Domain.TickTest.Enums;
 
 namespace Domain.TickTest.Models
 {
@@ -13,6 +14,9 @@ namespace Domain.TickTest.Models
         public EOrderStatus Status;
         public DateTime CreatedAt;
         public DateTime? FilledAt;
+        // Optional protection prices: when this order fills, they become the position's TakeProfit/StopLoss.
+        public double? TakeProfitPrice;
+        public double? StopLossPrice;
 
         public override string ToString() => $"{Asset} {Side} {Type} {Quantity}@{Price} {Status}";
     }

@@ -1,5 +1,6 @@
 using Domain.TickTest.Business.Interfaces;
 using Domain.TickTest.Models;
+using Domain.TickTest.Enums;
 using Microsoft.Extensions.Logging;
 
 namespace Application.TickTest.Handlers

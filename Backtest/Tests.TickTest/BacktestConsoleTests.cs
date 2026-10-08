@@ -1,5 +1,6 @@
 using ConsoleApp.TickTest;
 using Domain.TickTest.Models;
+using Domain.TickTest.Enums;
 using Microsoft.Extensions.Configuration;
 using static Tests.TickTest.Support.ContextBuilder;
 

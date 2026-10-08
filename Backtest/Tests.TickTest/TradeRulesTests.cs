@@ -1,5 +1,6 @@
 using Domain.TickTest.Business.Services;
 using Domain.TickTest.Models;
+using Domain.TickTest.Enums;
 using Tests.TickTest.Support;
 using static Tests.TickTest.Support.ContextBuilder;
 
@@ -178,6 +179,112 @@ namespace Tests.TickTest
             Assert.Equal(EPositionSide.Short, closed.Side);
             Assert.Equal(20, closed.PnL);
             Assert.Equal(0, context.Position.Quantity);
+        }
+
+        // ---- Fill: take profit / stop loss ----
+
+        [Fact]
+        public void Fill_OpenLongWithTakeProfitAndStopLoss_SetsProtectionOrders()
+        {
+            var context = TradeRules.Fill(Empty(), EOrderSide.Buy, 2, 100, T0, takeProfitPrice: 110, stopLossPrice: 95);
+
+            var takeProfit = Assert.NotNull(context.Position.TakeProfit);
+            Assert.Equal(EOrderType.Limit, takeProfit.Type);
+            Assert.Equal(EOrderSide.Sell, takeProfit.Side);
+            Assert.Equal(2, takeProfit.Quantity);
+            Assert.Equal(110, takeProfit.Price);
+            Assert.Equal(EOrderStatus.New, takeProfit.Status);
+
+            var stopLoss = Assert.NotNull(context.Position.StopLoss);
+            Assert.Equal(EOrderType.Stop, stopLoss.Type);
+            Assert.Equal(EOrderSide.Sell, stopLoss.Side);
+            Assert.Equal(2, stopLoss.Quantity);
+            Assert.Equal(95, stopLoss.Price);
+            Assert.Equal(EOrderStatus.New, stopLoss.Status);
+        }
+
+        [Fact]
+        public void Fill_OpenShortWithTakeProfitAndStopLoss_ProtectionOrdersBuy()
+        {
+            var context = TradeRules.Fill(Empty(), EOrderSide.Sell, 1, 100, T0, takeProfitPrice: 90, stopLossPrice: 105);
+
+            Assert.Equal(EOrderSide.Buy, context.Position.TakeProfit!.Value.Side);
+            Assert.Equal(EOrderSide.Buy, context.Position.StopLoss!.Value.Side);
+        }
+
+        [Fact]
+        public void Fill_OpenWithoutTakeProfitAndStopLoss_LeavesThemNull()
+        {
+            var context = TradeRules.Fill(Empty(), EOrderSide.Buy, 1, 100, T0);
+
+            Assert.Null(context.Position.TakeProfit);
+            Assert.Null(context.Position.StopLoss);
+        }
+
+        [Fact]
+        public void Fill_AddWithoutPrices_KeepsPricesAndResizes()
+        {
+            var context = TradeRules.Fill(Empty(), EOrderSide.Buy, 1, 100, T0, takeProfitPrice: 110, stopLossPrice: 95);
+
+            context = TradeRules.Fill(context, EOrderSide.Buy, 2, 102, T0.AddMinutes(1));
+
+            Assert.Equal(110, context.Position.TakeProfit!.Value.Price);
+            Assert.Equal(3, context.Position.TakeProfit!.Value.Quantity);
+            Assert.Equal(95, context.Position.StopLoss!.Value.Price);
+            Assert.Equal(3, context.Position.StopLoss!.Value.Quantity);
+        }
+
+        [Fact]
+        public void Fill_AddWithPrices_ReplacesOnlyTheGivenOnes()
+        {
+            var context = TradeRules.Fill(Empty(), EOrderSide.Buy, 1, 100, T0, takeProfitPrice: 110, stopLossPrice: 95);
+
+            context = TradeRules.Fill(context, EOrderSide.Buy, 1, 102, T0.AddMinutes(1), takeProfitPrice: 120);
+
+            Assert.Equal(120, context.Position.TakeProfit!.Value.Price);
+            Assert.Equal(2, context.Position.TakeProfit!.Value.Quantity);
+            Assert.Equal(95, context.Position.StopLoss!.Value.Price);
+            Assert.Equal(2, context.Position.StopLoss!.Value.Quantity);
+        }
+
+        [Fact]
+        public void Fill_Reduce_ResizesProtectionOrdersAndIgnoresNewPrices()
+        {
+            var context = TradeRules.Fill(Empty(), EOrderSide.Buy, 3, 100, T0, takeProfitPrice: 110, stopLossPrice: 95);
+
+            context = TradeRules.Fill(context, EOrderSide.Sell, 1, 105, T0.AddMinutes(1), takeProfitPrice: 50, stopLossPrice: 200);
+
+            Assert.Equal(110, context.Position.TakeProfit!.Value.Price);
+            Assert.Equal(2, context.Position.TakeProfit!.Value.Quantity);
+            Assert.Equal(95, context.Position.StopLoss!.Value.Price);
+            Assert.Equal(2, context.Position.StopLoss!.Value.Quantity);
+        }
+
+        [Fact]
+        public void Fill_Close_ClearsProtectionOrders()
+        {
+            var context = TradeRules.Fill(Empty(), EOrderSide.Buy, 1, 100, T0, takeProfitPrice: 110, stopLossPrice: 95);
+
+            context = TradeRules.Fill(context, EOrderSide.Sell, 1, 105, T0.AddMinutes(1));
+
+            Assert.Equal(0, context.Position.Quantity);
+            Assert.Null(context.Position.TakeProfit);
+            Assert.Null(context.Position.StopLoss);
+        }
+
+        [Fact]
+        public void Fill_Flip_UsesOnlyThePricesOfTheFlippingFill()
+        {
+            var context = TradeRules.Fill(Empty(), EOrderSide.Buy, 1, 100, T0, takeProfitPrice: 110, stopLossPrice: 95);
+
+            context = TradeRules.Fill(context, EOrderSide.Sell, 3, 105, T0.AddMinutes(1), stopLossPrice: 108);
+
+            Assert.Equal(EPositionSide.Short, context.Position.Side);
+            Assert.Null(context.Position.TakeProfit);
+            var stopLoss = Assert.NotNull(context.Position.StopLoss);
+            Assert.Equal(EOrderSide.Buy, stopLoss.Side);
+            Assert.Equal(2, stopLoss.Quantity);
+            Assert.Equal(108, stopLoss.Price);
         }
     }
 }

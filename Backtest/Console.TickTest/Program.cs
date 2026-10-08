@@ -1,6 +1,7 @@
 using Application.TickTest.Handlers;
 using Application.TickTest.Services;
 using Domain.TickTest.Models;
+using Domain.TickTest.Enums;
 using Domain.TickTest.Business.Interfaces;
 using Domain.TickTest.Business.Services;
 using Infrastructure.TickTest.Options;

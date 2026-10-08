@@ -1,6 +1,7 @@
 using Application.TickTest.Options;
 using Application.TickTest.Services;
 using Domain.TickTest.Models;
+using Domain.TickTest.Enums;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging.Abstractions;
 using Tests.TickTest.Support;

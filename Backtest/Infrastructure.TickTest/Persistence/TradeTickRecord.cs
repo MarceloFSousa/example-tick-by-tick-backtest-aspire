@@ -1,4 +1,5 @@
 using Domain.TickTest.Models;
+using Domain.TickTest.Enums;
 
 namespace Infrastructure.TickTest.Persistence
 {
