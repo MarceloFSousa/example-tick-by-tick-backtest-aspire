@@ -7,7 +7,7 @@ namespace Infrastructure.MarketData.Persistence
     // enum-as-string, etc.) don't leak into Domain.MarketData.
     public class TradeTickRecord
     {
-        public Guid Id { get; set; }
+        public int Id { get; set; }
         public string Ticker { get; set; } = string.Empty;
         public string Exchange { get; set; } = string.Empty;
         public DateTime TimestampUtc { get; set; }
@@ -15,9 +15,7 @@ namespace Infrastructure.MarketData.Persistence
         public double Quantity { get; set; }
         public string Type { get; set; } = string.Empty;
         public int BuyerId { get; set; }
-        public string BuyerName { get; set; } = string.Empty;
         public int SellerId { get; set; }
-        public string SellerName { get; set; } = string.Empty;
 
         public static TradeTickRecord FromDomain(TradeTick tick) => new()
         {
@@ -29,9 +27,7 @@ namespace Infrastructure.MarketData.Persistence
             Quantity = tick.Quantity,
             Type = tick.Type.ToString(),
             BuyerId = tick.Buyer.Id,
-            BuyerName = tick.Buyer.Name ?? string.Empty,
-            SellerId = tick.Seller.Id,
-            SellerName = tick.Seller.Name ?? string.Empty
+            SellerId = tick.Seller.Id
         };
 
         public TradeTick ToDomain() => new()
@@ -42,8 +38,8 @@ namespace Infrastructure.MarketData.Persistence
             Price = Price,
             Quantity = Quantity,
             Type = Enum.Parse<ETradeType>(Type),
-            Buyer = new Agent { Id = BuyerId, Name = BuyerName },
-            Seller = new Agent { Id = SellerId, Name = SellerName }
+            Buyer = new Agent { Id = BuyerId },
+            Seller = new Agent { Id = SellerId }
         };
     }
 }

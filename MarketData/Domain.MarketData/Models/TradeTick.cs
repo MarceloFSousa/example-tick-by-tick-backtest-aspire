@@ -4,7 +4,7 @@ namespace Domain.MarketData.Models
 {
     public struct TradeTick
     {
-        public Guid Id;
+        public int Id;
         public Asset Asset;
         public DateTime Timestamp;
         public double Price;

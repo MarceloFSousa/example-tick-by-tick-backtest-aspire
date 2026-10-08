@@ -29,9 +29,9 @@ namespace Tests.TickTest.Support
             return Task.FromResult<IReadOnlyList<TradeTick>>(result);
         }
 
-        public Task<Guid> InsertAsync(TradeTick tick, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task<int> InsertAsync(TradeTick tick, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task InsertRangeAsync(IEnumerable<TradeTick> ticks, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<bool> UpdateAsync(TradeTick tick, CancellationToken cancellationToken = default) => throw new NotSupportedException();
-        public Task<bool> DeleteAsync(Guid id, string ticker, string exchange, DateTime dateUtc, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task<bool> DeleteAsync(int id, string ticker, string exchange, DateTime dateUtc, CancellationToken cancellationToken = default) => throw new NotSupportedException();
     }
 }
