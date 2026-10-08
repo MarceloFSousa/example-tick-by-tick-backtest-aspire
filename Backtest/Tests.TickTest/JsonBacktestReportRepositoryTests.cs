@@ -1,4 +1,5 @@
 using Domain.TickTest.Models;
+using Domain.TickTest.Enums;
 using Infrastructure.TickTest.Options;
 using Infrastructure.TickTest.Persistence;
 using static Tests.TickTest.Support.ContextBuilder;

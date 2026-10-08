@@ -3,6 +3,7 @@ using Domain.DLL.Business;
 using Domain.DLL.Extensions;
 using Domain.DLL.Models;
 using Domain.MarketData.Models;
+using Domain.MarketData.Enums;
 using Microsoft.Extensions.Logging;
 
 namespace Infrastructure.MarketData.Providers

@@ -1,5 +1,6 @@
 using Domain.TickTest.Business.Services;
 using Domain.TickTest.Models;
+using Domain.TickTest.Enums;
 using Tests.TickTest.Support;
 using static Tests.TickTest.Support.ContextBuilder;
 

@@ -1,6 +1,7 @@
 using Application.TickTest.Services;
 using Application.TickTest.Workers;
 using Domain.TickTest.Models;
+using Domain.TickTest.Enums;
 using Microsoft.Extensions.Logging.Abstractions;
 using Tests.TickTest.Support;
 using static Tests.TickTest.Support.ContextBuilder;

@@ -1,4 +1,4 @@
-namespace Domain.MarketData.Models
+namespace Domain.TickTest.Enums
 {
     public enum ETradeType
     {

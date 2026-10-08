@@ -1,4 +1,4 @@
-namespace Domain.TickTest.Models
+namespace Domain.TickTest.Enums
 {
     public enum EOrderSide
     {

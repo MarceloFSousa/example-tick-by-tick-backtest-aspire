@@ -2,6 +2,7 @@ using System.Threading.Channels;
 using Application.MarketData.Options;
 using Domain.MarketData.Business.Interfaces;
 using Domain.MarketData.Models;
+using Domain.MarketData.Enums;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;

@@ -1,4 +1,5 @@
 using Domain.MarketData.Models;
+using Domain.MarketData.Enums;
 
 namespace Infrastructure.MarketData.Persistence
 {

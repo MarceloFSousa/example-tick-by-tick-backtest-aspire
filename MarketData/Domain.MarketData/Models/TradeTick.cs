@@ -1,4 +1,5 @@
 using System;
+using Domain.MarketData.Enums;
 
 namespace Domain.MarketData.Models
 {

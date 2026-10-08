@@ -1,4 +1,5 @@
 using System;
+using Domain.TickTest.Enums;
 
 namespace Domain.TickTest.Models
 {
